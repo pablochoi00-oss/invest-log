@@ -329,19 +329,19 @@ select option{background:var(--bg2);color:var(--text);}
         <div id="date-area" style="margin-bottom:4px;"></div>
         <div class="divider"></div>
 
-        <div class="step-lbl"><span class="snum">1</span>Account Type</div>
+        <div class="step-lbl"><span class="snum">1</span>Market</div>
+        <div class="chips" id="chips-region">
+          <button class="chip on" onclick="setChip('region','Domestic',this)">🇰🇷 대한민국</button>
+          <button class="chip"    onclick="setChip('region','Overseas',this)">🌐 Overseas</button>
+        </div>
+
+        <div class="step-lbl"><span class="snum">2</span>Account Type</div>
         <div class="chips" id="chips-account">
           <button class="chip on" onclick="setChip('account','General',this)">General</button>
           <button class="chip"    onclick="setChip('account','ISA',this)">ISA</button>
           <button class="chip"    onclick="setChip('account','IRP',this)">IRP</button>
           <button class="chip"    onclick="setChip('account','연금저축',this)">연금저축</button>
           <button class="chip"    onclick="setChip('account','기타',this)">기타</button>
-        </div>
-
-        <div class="step-lbl"><span class="snum">2</span>Market</div>
-        <div class="chips" id="chips-region">
-          <button class="chip on" onclick="setChip('region','Domestic',this)">🇰🇷 Domestic</button>
-          <button class="chip"    onclick="setChip('region','Overseas',this)">🌐 Overseas</button>
         </div>
 
         <div class="step-lbl"><span class="snum">3</span>Asset Class</div>
@@ -686,14 +686,21 @@ function setCur(c,el){
 /* ── MODAL / FULLSCREEN CHARTS ── */
 function openModal(name){
   document.getElementById('modal-'+name).classList.add('open');
-  // lock scroll
   document.body.style.overflow='hidden';
-  // render chart inside modal
+  // Auto-rotate to landscape for flow/stats charts
+  if(name==='flow'||name==='alloc'||name==='region'||name==='pie'){
+    if(screen.orientation&&screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  }
   setTimeout(()=>renderModalChart(name),50);
 }
 function closeModal(name){
   document.getElementById('modal-'+name).classList.remove('open');
   document.body.style.overflow='';
+  if(screen.orientation&&screen.orientation.unlock){
+    screen.orientation.unlock();
+  }
   if(modalCharts[name]){modalCharts[name].forEach(c=>c.destroy());delete modalCharts[name];}
 }
 function renderModalChart(name){
@@ -704,7 +711,7 @@ function renderModalChart(name){
   const GRM=()=>({color:isDk()?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)'});
   const isKRW=flowCurrency==='KRW';
   const fmtAx=v=>isKRW?fmtAxisKRW(v):fmtAxisUSD(v);
-  const getAmt2=e=>isKRW?(e.isUSD&&e.rate?e.amt:(e.isUSD?0:e.amt)):(e.isUSD&&e.rate?e.amt/e.rate:0);
+  const getAmt2=e=>isKRW?((!e.isUSD)?e.amt:0):(e.isUSD&&e.rate?e.amt/e.rate:0);
 
   if(name==='flow'){
     const cbs=years.map(y=>Math.round(entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)<=y).reduce((a,e)=>a+getAmt2(e),0)));
@@ -724,15 +731,17 @@ function renderModalChart(name){
     ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TKM().color,font:{size:12},padding:14}}},scales:{x:{stacked:true,ticks:{...TKM(),autoSkip:false},grid:{display:false},border:{display:false}},y:{stacked:true,ticks:{...TKM(),callback:v=>fmtAxisKRW(v)},grid:GRM(),border:{display:false}}}}});
     modalCharts[name]=[c];
   }else if(name==='region'){
-    const domT=entries.filter(e=>e.type==='BUY'&&e.region==='Domestic').reduce((a,e)=>a+e.amt,0);
-    const ovsT=entries.filter(e=>e.type==='BUY'&&e.region==='Overseas').reduce((a,e)=>a+e.amt,0);
-    const tot=domT+ovsT||1;
-    const c=new Chart(document.getElementById('mc-region'),{type:'doughnut',data:{labels:[`🇰🇷 Domestic  ${fmtWon(domT)} (${Math.round(domT/tot*100)}%)`,`🌐 Overseas  ${fmtWon(ovsT)} (${Math.round(ovsT/tot*100)}%)`],datasets:[{data:[Math.round(domT),Math.round(ovsT)],backgroundColor:['#FF9500','#FF2D55'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}}}}});
+    const getDomAmtM=e=>(!e.isUSD)?e.amt:0;
+    const getOvsAmtM=e=>e.isUSD&&e.rate?e.amt/e.rate:0;
+    const domT=entries.filter(e=>e.type==='BUY'&&e.region==='Domestic').reduce((a,e)=>a+getDomAmtM(e),0);
+    const ovsT=entries.filter(e=>e.type==='BUY'&&e.region==='Overseas').reduce((a,e)=>a+getOvsAmtM(e),0);
+    const c=new Chart(document.getElementById('mc-region'),{type:'doughnut',data:{labels:[`🇰🇷 Domestic  ${fmtWon(domT)}`,`🌐 Overseas  ${fmtUSD(ovsT)}`],datasets:[{data:[Math.round(domT),Math.round(ovsT*1000)],backgroundColor:['#FF9500','#FF2D55'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?fmtWon(c.raw):fmtUSD(c.raw/1000)}}}}});
     modalCharts[name]=[c];
   }else if(name==='pie'){
-    const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+e.amt,0);
-    const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+e.amt,0);
-    const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+e.amt,0);
+    const getDomAmtP=e=>(!e.isUSD)?e.amt:0;
+    const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+getDomAmtP(e),0);
+    const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+getDomAmtP(e),0);
+    const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+getDomAmtP(e),0);
     const tot=ts+tc+te||1;
     const c=new Chart(document.getElementById('mc-pie'),{type:'doughnut',data:{labels:[`Stock  ${fmtWon(ts)} (${Math.round(ts/tot*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot*100)}%)`,`ETF  ${fmtWon(te)} (${Math.round(te/tot*100)}%)`],datasets:[{data:[Math.round(ts),Math.round(tc),Math.round(te)],backgroundColor:['#007AFF','#AF52DE','#30B0C7'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}}}}});
     modalCharts[name]=[c];
@@ -907,14 +916,11 @@ function renderFlow(){
   dC('flow');dC('net');
   const{years,r}=getYD();
   const isKRW=flowCurrency==='KRW';
-  const getAmt2=e=>{
-    if(isKRW) return e.isUSD?(0):(e.amt);  // KRW mode: only non-USD entries
-    return e.isUSD&&e.rate?e.amt/e.rate:0; // USD mode: only USD entries
+  // KRW 탭: isUSD=false인 항목의 원화 금액만. USD 탭: isUSD=true인 항목의 달러 금액만(rate로 역산)
+  const getAmtByCur=e=>{
+    if(isKRW) return (!e.isUSD)?e.amt:0;
+    else return e.isUSD&&e.rate?(e.amt/e.rate):0;
   };
-  // Actually: KRW mode shows KRW entries + converted USD entries as KRW
-  const getAmtKRW=e=>e.isUSD&&e.rate?e.amt:e.amt; // all in KRW
-  const getAmtUSD=e=>e.isUSD&&e.rate?e.amt/e.rate:e.amt/(liveRate||1350);
-  const getAmtByCur=e=>isKRW?getAmtKRW(e):getAmtUSD(e);
 
   const tB=entries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getAmtByCur(e),0);
   const tS=entries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getAmtByCur(e),0);
@@ -961,21 +967,35 @@ function renderAlloc(){
   dC('alloc');dC('region');dC('pie');
   const{years,r}=getYD();
   if(!years.length)return;
+
+  // Asset Mix by Year: Domestic은 원화(isUSD=false), Overseas는 USD 달러값(isUSD=true, rate로 역산)
+  // 차트에서는 각 통화 그대로 사용 (혼합 표시 - 분리 불가능한 bar는 원화 기준)
+  // Stock/Crypto/ETF: domestic entries → KRW amt, overseas entries → USD amt (별도 계산)
+  const getDomAmt=e=>(!e.isUSD)?e.amt:0;  // 원화 입력
+  const getOvsAmt=e=>e.isUSD&&e.rate?e.amt/e.rate:0; // 달러 입력 → USD
+
+  // Asset mix bar: domestic KRW only (원화 기준 domestic 분리)
+  const domByAssetYear=(asset,y)=>entries.filter(e=>e.type==='BUY'&&e.asset===asset&&e.region==='Domestic'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getDomAmt(e),0);
+
   charts['alloc']=new Chart(document.getElementById('c-alloc'),{type:'bar',data:{labels:years,datasets:[
-    {label:'Stock', data:years.map(y=>Math.round(r[y].buy['Stock'])), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
-    {label:'Crypto',data:years.map(y=>Math.round(r[y].buy['Crypto'])),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'},
-    {label:'ETF',  data:years.map(y=>Math.round(r[y].buy['ETF'])),   backgroundColor:'rgba(48,176,199,.75)',borderRadius:3,stack:'a'}
+    {label:'Stock', data:years.map(y=>Math.round(domByAssetYear('Stock',y))), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
+    {label:'Crypto',data:years.map(y=>Math.round(domByAssetYear('Crypto',y))),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'},
+    {label:'ETF',  data:years.map(y=>Math.round(domByAssetYear('ETF',y))),   backgroundColor:'rgba(48,176,199,.75)',borderRadius:3,stack:'a'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtWon(c.raw)}`}}},scales:{x:{stacked:true,ticks:{...TK(),autoSkip:false,maxRotation:45},grid:{display:false},border:{display:false}},y:{stacked:true,ticks:{...TK(),callback:v=>fmtAxisKRW(v)},grid:GR(),border:{display:false}}}}});
-  const domT=entries.filter(e=>e.type==='BUY'&&e.region==='Domestic').reduce((a,e)=>a+e.amt,0);
-  const ovsT=entries.filter(e=>e.type==='BUY'&&e.region==='Overseas').reduce((a,e)=>a+e.amt,0);
-  const tot2=domT+ovsT||1;
+
+  // Domestic vs Overseas: 원화/달러 분리
+  const domT=entries.filter(e=>e.type==='BUY'&&e.region==='Domestic').reduce((a,e)=>a+getDomAmt(e),0);
+  const ovsT=entries.filter(e=>e.type==='BUY'&&e.region==='Overseas').reduce((a,e)=>a+getOvsAmt(e),0);
+  // 비율 계산은 각각 독립적으로 표시 (합산 비율 대신 각 통화 금액 표시)
   charts['region']=new Chart(document.getElementById('c-region'),{type:'doughnut',
-    data:{labels:[`🇰🇷 Domestic  ${fmtWon(domT)} (${Math.round(domT/tot2*100)}%)`,`🌐 Overseas  ${fmtWon(ovsT)} (${Math.round(ovsT/tot2*100)}%)`],
-      datasets:[{data:[Math.round(domT),Math.round(ovsT)],backgroundColor:['#FF9500','#FF2D55'],borderWidth:0,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>`${fmtWon(c.raw)}`}}}}});
-  const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+e.amt,0);
-  const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+e.amt,0);
-  const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+e.amt,0);
+    data:{labels:[`🇰🇷 Domestic  ${fmtWon(domT)}`,`🌐 Overseas  ${fmtUSD(ovsT)}`],
+      datasets:[{data:[Math.round(domT), Math.round(ovsT*1000)],backgroundColor:['#FF9500','#FF2D55'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?fmtWon(c.raw):fmtUSD(c.raw/1000)}}}}});
+
+  // Total Asset Mix: stock/crypto/etf 원화 기준 domestic
+  const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+getDomAmt(e),0);
+  const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+getDomAmt(e),0);
+  const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+getDomAmt(e),0);
   const tot3=ts+tc+te||1;
   charts['pie']=new Chart(document.getElementById('c-pie'),{type:'doughnut',
     data:{labels:[`Stock  ${fmtWon(ts)} (${Math.round(ts/tot3*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot3*100)}%)`,`ETF  ${fmtWon(te)} (${Math.round(te/tot3*100)}%)`],
