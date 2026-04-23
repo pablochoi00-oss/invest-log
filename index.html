@@ -644,10 +644,10 @@ function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-th
 /* ── FORMAT ── */
 function fmtEl(el){const r=el.value.replace(/,/g,'').replace(/\D/g,'');el.value=r?parseInt(r).toLocaleString():'';}
 function getAmt(id){return parseFloat((document.getElementById(id)?.value||'').replace(/,/g,''))||0;}
-/* Full KRW — no abbreviation, full digits + " won" */
+/* Full KRW — ₩ prefix like USD uses $ */
 function fmtWon(n){
   const v=Math.round(Number(n));
-  return v.toLocaleString()+' won';
+  return '₩'+v.toLocaleString();
 }
 /* USD — full digits + " USD" */
 function fmtUSD(n){
@@ -965,36 +965,18 @@ function renderFlow(){
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
 
-  // 상단 통계: 전체 total + 탭별 수치, entries 분리
+  // 상단 통계: 선택된 통화만 표시 + entries 분리
+  const tB=isKRW?tB_krw:tB_usd;
+  const tS=isKRW?tS_krw:tS_usd;
+  const net=isKRW?net_krw:net_usd;
+  const entries_count=isKRW?krwEntries:usdEntries;
+  const entries_label=isKRW?'KRW Entries':'USD Entries';
+
   document.getElementById('flow-metrics').innerHTML=`
-    <div class="mc" style="grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:0;">
-        <div class="ml">Total Bought</div>
-        <div class="mv">${fmtWon(tB_krw)}</div>
-        ${tB_usd>0?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">${fmtUSD(tB_usd)}</div>`:''}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="ml">Total Sold</div>
-        <div class="mv">${fmtWon(tS_krw)}</div>
-        ${tS_usd>0?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">${fmtUSD(tS_usd)}</div>`:''}
-      </div>
-    </div>
-    <div class="mc">
-      <div class="ml">Net (KRW)</div>
-      <div class="mv ${net_krw>=0?'pos':'neg'}">${fmtWon(net_krw)}</div>
-    </div>
-    <div class="mc">
-      <div class="ml">Net (USD)</div>
-      <div class="mv ${net_usd>=0?'pos':'neg'}">${fmtUSD(net_usd)}</div>
-    </div>
-    <div class="mc">
-      <div class="ml">KRW Entries</div>
-      <div class="mv">${krwEntries}</div>
-    </div>
-    <div class="mc">
-      <div class="ml">USD Entries</div>
-      <div class="mv">${usdEntries}</div>
-    </div>`;
+    <div class="mc"><div class="ml">Total Bought</div><div class="mv">${fmt(tB)}</div></div>
+    <div class="mc"><div class="ml">Total Sold</div><div class="mv">${fmt(tS)}</div></div>
+    <div class="mc"><div class="ml">Net Invested</div><div class="mv ${net>=0?'pos':'neg'}">${fmt(net)}</div></div>
+    <div class="mc"><div class="ml">${entries_label}</div><div class="mv">${entries_count}</div></div>`;
 
   const yrEl=document.getElementById('yr-summary');
   if(!years.length){yrEl.innerHTML='<div class="empty">No data yet</div>';}
@@ -1010,18 +992,23 @@ function renderFlow(){
       const pct=Math.round(buyKRW/maxB*100);
       const hasKRW=buyKRW>0||sellKRW>0;
       const hasUSD=buyUSD>0||sellUSD>0;
+      // KRW: 초록/빨강 기본 팔레트 / USD: 청록(#30B0C7) 계열로 구분
+      const krwBuyCol='var(--buy)';      // #34C759 green
+      const krwSellCol='var(--sell)';    // #FF3B30 red
+      const usdBuyCol='#30B0C7';         // teal-blue
+      const usdSellCol='#FF9500';        // amber
       return`<div class="yr-card">
         <div class="yr-title">${y}</div>
         ${hasKRW?`
-        <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:.1em;margin-bottom:4px;">KRW ₩</div>
-        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:var(--buy);">${fmtWon(buyKRW)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:var(--sell);">${fmtWon(sellKRW)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netKRW>=0?'var(--buy)':'var(--sell)'};">${netKRW>=0?'+':''}${fmtWon(netKRW)}</span></div>`:''}
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--buy);display:inline-block;flex-shrink:0;"></span>KRW ₩</div>
+        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${krwBuyCol};">${fmtWon(buyKRW)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${krwSellCol};">${fmtWon(sellKRW)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netKRW>=0?krwBuyCol:krwSellCol};">${netKRW>=0?'+':''}${fmtWon(netKRW)}</span></div>`:''}
         ${hasUSD?`
-        <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:.1em;margin:${hasKRW?'8px':0} 0 4px;border-top:${hasKRW?'0.5px solid var(--border)':''};padding-top:${hasKRW?'8px':0};">USD $</div>
-        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:var(--buy);">${fmtUSD(buyUSD)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:var(--sell);">${fmtUSD(sellUSD)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netUSD>=0?'var(--buy)':'var(--sell)'};">${netUSD>=0?'+':''}${fmtUSD(netUSD)}</span></div>`:''}
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin:${hasKRW?'10px':0} 0 5px;${hasKRW?'border-top:0.5px solid var(--border);padding-top:10px;':''}display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#30B0C7;display:inline-block;flex-shrink:0;"></span>USD $</div>
+        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${usdBuyCol};">${fmtUSD(buyUSD)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${usdSellCol};">${fmtUSD(sellUSD)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netUSD>=0?usdBuyCol:usdSellCol};">${netUSD>=0?'+':''}${fmtUSD(netUSD)}</span></div>`:''}
         <div class="yr-bar"><div class="yr-fill" style="width:${pct}%;"></div></div>
       </div>`;
     }).join('');
