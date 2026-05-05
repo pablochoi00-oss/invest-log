@@ -236,6 +236,43 @@ select option{background:var(--bg2);color:var(--text);}
 .cur-tabs{display:flex;gap:6px;margin-bottom:14px;}
 .cur-tab{padding:6px 16px;font-size:12px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);transition:all .2s;}
 .cur-tab.on{background:var(--buy);border-color:var(--buy);color:#fff;}
+
+/* EDIT OVERLAY on history item */
+.eitem{position:relative;overflow:hidden;}
+.eitem-edit-bar{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:center;justify-content:center;gap:10px;border-radius:6px;animation:fadeIn .18s ease;}
+.eitem.edit-mode .eitem-edit-bar{display:flex;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.edit-act-btn{padding:8px 18px;font-size:12px;font-weight:600;border:none;border-radius:20px;cursor:pointer;font-family:var(--font);}
+.edit-act-btn.edit{background:var(--buy);color:#fff;}
+.edit-act-btn.del{background:var(--sell);color:#fff;}
+.edit-act-btn.cancel{background:var(--bg4);color:var(--text);}
+
+/* EDIT MODAL */
+.edit-modal{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:flex-end;}
+.edit-modal.open{display:flex;animation:slideUp .25s cubic-bezier(.34,1.3,.64,1);}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.edit-modal-inner{background:var(--bg2);border-radius:22px 22px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom,12px) + 20px);width:100%;max-height:88dvh;overflow-y:auto;}
+.edit-modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 18px;}
+.edit-modal-title{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;}
+
+/* MONTHLY STATS MODAL */
+.month-modal{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:flex-end;}
+.month-modal.open{display:flex;animation:slideUp .25s cubic-bezier(.34,1.3,.64,1);}
+.month-modal-inner{background:var(--bg2);border-radius:22px 22px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom,12px) + 20px);width:100%;max-height:88dvh;overflow-y:auto;}
+.month-modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 18px;}
+.month-modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.month-modal-title{font-size:18px;font-weight:700;letter-spacing:-.02em;}
+.month-close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;padding:0 2px;}
+.mo-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--border);}
+.mo-row:last-child{border-bottom:none;}
+.mo-name{font-family:var(--mono);font-size:11px;color:var(--text2);width:36px;flex-shrink:0;}
+.mo-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:0 12px;}
+.mo-bar-fill{height:6px;border-radius:3px;background:var(--buy);}
+.mo-vals{text-align:right;font-family:var(--mono);font-size:11px;color:var(--text);min-width:80px;}
+.mo-sell{color:var(--sell);font-size:9px;margin-top:2px;}
+.yr-card{cursor:pointer;transition:transform .12s,box-shadow .12s;}
+.yr-card:active{transform:scale(.98);}
+.yr-card-tap{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;text-align:right;letter-spacing:.08em;}
 </style>
 </head>
 <body>
@@ -303,6 +340,45 @@ select option{background:var(--bg2);color:var(--text);}
     <button class="modal-close" onclick="closeModal('pie')">✕</button>
   </div>
   <div class="chart-modal-body"><canvas id="mc-pie"></canvas></div>
+</div>
+
+<!-- EDIT ENTRY MODAL -->
+<div class="edit-modal" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="edit-modal-inner">
+    <div class="edit-modal-handle"></div>
+    <div class="edit-modal-title">Edit Entry</div>
+    <input type="hidden" id="em-id">
+    <div class="trow" style="margin-bottom:14px;">
+      <button class="tbtn buy" id="em-buy" onclick="emSetT('BUY')">▲ BUY</button>
+      <button class="tbtn sell" id="em-sell" onclick="emSetT('SELL')">▼ SELL</button>
+    </div>
+    <div class="fl"><label>Amount (KRW ₩)</label><input type="text" id="em-amt" inputmode="numeric" placeholder="0" oninput="fmtEl(this)"></div>
+    <div class="fl"><label>Date (YYYY-MM-DD or YYYY)</label><input type="text" id="em-dk" placeholder="2025-01-15"></div>
+    <div class="fl"><label>Ticker</label><input type="text" id="em-ticker" placeholder="AAPL"></div>
+    <div class="fl"><label>Memo</label><textarea class="memo-input" id="em-memo" placeholder="memo..."></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="sbtn ghost" style="flex:1;" onclick="closeEditModal()">Cancel</button>
+      <button class="sbtn" style="flex:2;" onclick="saveEditEntry()">Save Changes</button>
+    </div>
+    <div class="smsg" id="em-msg" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- MONTHLY STATS MODAL -->
+<div class="month-modal" id="month-modal" onclick="if(event.target===this)closeMonthModal()">
+  <div class="month-modal-inner">
+    <div class="month-modal-handle"></div>
+    <div class="month-modal-hd">
+      <div class="month-modal-title" id="month-modal-title">2025 Monthly</div>
+      <button class="month-close" onclick="closeMonthModal()">✕</button>
+    </div>
+    <div class="cur-tabs" style="margin-bottom:16px;" id="month-cur-tabs">
+      <button class="cur-tab on" onclick="setMonthCur('KRW',this)">₩ KRW</button>
+      <button class="cur-tab" onclick="setMonthCur('USD',this)">$ USD</button>
+    </div>
+    <div id="month-chart-wrap" style="height:180px;margin-bottom:14px;"><canvas id="c-month"></canvas></div>
+    <div id="month-list"></div>
+  </div>
 </div>
 
 <div class="shell">
@@ -907,11 +983,10 @@ function renderHist(){
   const el=document.getElementById('hist-list');
   if(!list.length){el.innerHTML='<div class="empty">No records found</div>';return;}
   el.innerHTML=list.map(e=>{
-    // Display in original currency
     const dispAmt=e.isUSD&&e.rate?fmtUSD(e.amt/e.rate):fmtWon(e.amt);
     const altAmt=e.isUSD&&e.rate?` <span style="color:var(--text3);font-size:10px;">(${fmtWon(e.amt)})</span>`:'';
     const meta=[e.dk,e.ticker?(e.ticker+(e.qty?` × ${e.qty.toLocaleString(undefined,{maximumFractionDigits:6})} ${e.asset==='Crypto'?'coins':'shares'}`:'')):'',e.platform,e.account].filter(Boolean).join(' · ');
-    return`<div class="eitem">
+    return`<div class="eitem" id="eitem-${e.id}" oncontextmenu="showItemEdit(event,${e.id})">
       <div style="flex:1;">
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:5px;">
           ${rPill(e.region)}${aPill(e.asset)}<span class="pill ${e.type==='BUY'?'p-buy':'p-sell'}">${e.type}</span>
@@ -921,8 +996,82 @@ function renderHist(){
         ${e.memo?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic;">${e.memo}</div>`:''}
       </div>
       <button class="delbtn" onclick="delEntry(${e.id})">×</button>
+      <div class="eitem-edit-bar">
+        <button class="edit-act-btn edit" onclick="openEditModal(${e.id})">✎ Edit</button>
+        <button class="edit-act-btn del" onclick="delEntry(${e.id})">🗑 Delete</button>
+        <button class="edit-act-btn cancel" onclick="clearItemEdit(${e.id})">Cancel</button>
+      </div>
     </div>`;
   }).join('');
+  // Attach long-press listeners
+  list.forEach(e=>{
+    const el=document.getElementById('eitem-'+e.id);
+    if(!el)return;
+    let lpt=null;
+    const startLP=()=>{lpt=setTimeout(()=>showItemEdit(null,e.id),450);};
+    const endLP=()=>{clearTimeout(lpt);};
+    el.addEventListener('touchstart',startLP,{passive:true});
+    el.addEventListener('touchend',endLP,{passive:true});
+    el.addEventListener('touchmove',endLP,{passive:true});
+    el.addEventListener('mousedown',startLP);
+    el.addEventListener('mouseup',endLP);
+    el.addEventListener('mouseleave',endLP);
+  });
+}
+let editingId=null;
+function showItemEdit(ev,id){
+  if(ev)ev.preventDefault();
+  // clear others
+  document.querySelectorAll('.eitem.edit-mode').forEach(el=>{if(el.id!=='eitem-'+id)el.classList.remove('edit-mode');});
+  const el=document.getElementById('eitem-'+id);
+  if(el)el.classList.toggle('edit-mode');
+}
+function clearItemEdit(id){
+  const el=document.getElementById('eitem-'+id);
+  if(el)el.classList.remove('edit-mode');
+}
+function openEditModal(id){
+  clearItemEdit(id);
+  const e=entries.find(x=>x.id===id);
+  if(!e)return;
+  editingId=id;
+  document.getElementById('em-id').value=id;
+  document.getElementById('em-amt').value=Math.round(e.amt).toLocaleString();
+  document.getElementById('em-dk').value=e.dk;
+  document.getElementById('em-ticker').value=e.ticker||'';
+  document.getElementById('em-memo').value=e.memo||'';
+  emSetT(e.type);
+  document.getElementById('edit-modal').classList.add('open');
+}
+function emSetT(t){
+  document.getElementById('em-buy').classList.toggle('on',t==='BUY');
+  document.getElementById('em-sell').classList.toggle('on',t==='SELL');
+  document.getElementById('em-buy').dataset.sel=(t==='BUY')?'1':'';
+  document.getElementById('em-sell').dataset.sel=(t==='SELL')?'1':'';
+}
+function getEmType(){return document.getElementById('em-buy').dataset.sel==='1'?'BUY':'SELL';}
+function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');editingId=null;}
+async function saveEditEntry(){
+  const id=editingId;if(!id)return;
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const newAmt=parseFloat((document.getElementById('em-amt').value||'').replace(/,/g,''))||0;
+  const newDk=document.getElementById('em-dk').value.trim();
+  const newTicker=document.getElementById('em-ticker').value.trim();
+  const newMemo=document.getElementById('em-memo').value.trim();
+  const newType=getEmType();
+  if(!newAmt||!newDk){document.getElementById('em-msg').textContent='Amount and date required';document.getElementById('em-msg').className='smsg errmsg';return;}
+  const btn=document.querySelector('#edit-modal .sbtn:not(.ghost)');btn.disabled=true;btn.textContent='Saving...';
+  try{
+    // delete old + append updated (Google Sheets doesn't have easy update API in this setup)
+    await deleteRow(id);
+    const updated={...e,amt:newAmt,dk:newDk,ticker:newTicker,memo:newMemo,type:newType};
+    await appendRow(updated);
+    const idx=entries.findIndex(x=>x.id===id);
+    if(idx>-1)entries[idx]=updated;
+    entries.sort((a,b)=>a.dk.localeCompare(b.dk));
+    closeEditModal();renderHist();setSS('ok','Updated');
+  }catch(er){document.getElementById('em-msg').textContent='Update failed';document.getElementById('em-msg').className='smsg errmsg';console.error(er);}
+  btn.disabled=false;btn.textContent='Save Changes';
 }
 
 /* ── CSV ── */
@@ -1013,7 +1162,7 @@ function renderFlow(){
       const krwSellCol='var(--sell)';    // #FF3B30 red
       const usdBuyCol='#30B0C7';         // teal-blue
       const usdSellCol='#FF9500';        // amber
-      return`<div class="yr-card">
+      return`<div class="yr-card" onclick="openMonthModal('${y}')">
         <div class="yr-title">${y}</div>
         ${hasKRW?`
         <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--buy);display:inline-block;flex-shrink:0;"></span>KRW ₩</div>
@@ -1026,6 +1175,7 @@ function renderFlow(){
         <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${usdSellCol};">${fmtUSD(sellUSD)}</span></div>
         <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netUSD>=0?usdBuyCol:usdSellCol};">${netUSD>=0?'+':''}${fmtUSD(netUSD)}</span></div>`:''}
         <div class="yr-bar"><div class="yr-fill" style="width:${pct}%;"></div></div>
+        <div class="yr-card-tap">탭하여 월별 통계 보기 →</div>
       </div>`;
     }).join('');
   }
@@ -1126,6 +1276,96 @@ function renderGoal(){
       return`<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;margin-bottom:5px;"><span style="color:var(--text2);">${lbl}</span><span style="color:var(--text2);">Now ${cur[k]}% <span style="color:${diff>0?'var(--buy)':diff<0?'var(--sell)':'var(--text3)'};">${diff>0?'+':''}${diff}%</span> / Target ${allocGoal[k]||0}%</span></div><div class="abar-bg"><div class="abar-fill" style="width:${cur[k]}%;background:${col};"></div></div></div>`;
     }).join('');
   }
+}
+
+/* ── MONTHLY STATS MODAL ── */
+let monthYear=null, monthCur='KRW', monthChart=null;
+
+function openMonthModal(y){
+  monthYear=y;
+  document.getElementById('month-modal-title').textContent=y+' Monthly';
+  document.getElementById('month-modal').classList.add('open');
+  renderMonthModal();
+}
+function closeMonthModal(){
+  document.getElementById('month-modal').classList.remove('open');
+  if(monthChart){monthChart.destroy();monthChart=null;}
+}
+function setMonthCur(c,el){
+  monthCur=c;
+  document.querySelectorAll('#month-cur-tabs .cur-tab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderMonthModal();
+}
+function renderMonthModal(){
+  const y=monthYear;if(!y)return;
+  const isKRW=monthCur==='KRW';
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const getVal=e=>isKRW?((!e.isUSD)?e.amt:0):(e.isUSD&&e.rate?e.amt/e.rate:0);
+  const fmt=isKRW?fmtWon:fmtUSD;
+  const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
+
+  // Build month data
+  const data=MONTHS.map((_,mi)=>{
+    const mo=String(mi+1).padStart(2,'0');
+    const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo));
+    const buy=mEntries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getVal(e),0);
+    const sell=mEntries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getVal(e),0);
+    return{buy,sell,net:buy-sell,count:mEntries.length};
+  });
+
+  // If annual mode (dk = year only), distribute to year overview
+  const annEntries=entries.filter(e=>e.dk===y);
+  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-'));
+
+  const maxBuy=Math.max(...data.map(d=>d.buy),1);
+
+  // Chart
+  if(monthChart){monthChart.destroy();monthChart=null;}
+  const labels=MONTHS;
+  const buyVals=data.map(d=>Math.round(d.buy));
+  const sellVals=data.map(d=>Math.round(d.sell));
+  monthChart=new Chart(document.getElementById('c-month'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Buy',data:buyVals,backgroundColor:'rgba(52,199,89,.7)',borderRadius:3,stack:'a'},
+      {label:'Sell',data:sellVals,backgroundColor:'rgba(255,59,48,.55)',borderRadius:3,stack:'b'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},
+      scales:{x:{stacked:true,ticks:{...TK(),autoSkip:false,maxRotation:45},grid:{display:false},border:{display:false}},
+              y:{stacked:false,ticks:{...TK(),callback:fmtAx},grid:GR(),border:{display:false}}}}
+  });
+
+  // List
+  const totalBuy=data.reduce((a,d)=>a+d.buy,0);
+  const totalSell=data.reduce((a,d)=>a+d.sell,0);
+  const activeMonths=data.filter(d=>d.buy>0||d.sell>0);
+
+  let html=`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
+    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--buy);">${fmt(totalBuy)}</div></div>
+    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL SELL</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--sell);">${fmt(totalSell)}</div></div>
+    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?'var(--buy)':'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
+  </div>`;
+
+  if(!hasMonthly&&annEntries.length>0){
+    html+=`<div class="empty" style="padding:16px 0;font-size:11px;">이 연도는 연간 데이터로 기록되어 월별 분류가 없습니다.</div>`;
+  } else {
+    html+=data.map((d,mi)=>{
+      if(d.buy===0&&d.sell===0)return'';
+      const pct=Math.round(d.buy/maxBuy*100);
+      return`<div class="mo-row">
+        <div class="mo-name">${MONTHS[mi]}</div>
+        <div class="mo-bar-wrap"><div class="mo-bar-fill" style="width:${pct}%;"></div></div>
+        <div class="mo-vals">
+          <div style="color:var(--buy);">${fmt(d.buy)}</div>
+          ${d.sell>0?`<div class="mo-sell">−${fmt(d.sell)}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('month-list').innerHTML=html;
 }
 
 /* ── INIT ── */
