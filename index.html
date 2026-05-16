@@ -237,6 +237,21 @@ select option{background:var(--bg2);color:var(--text);}
 .cur-tab{padding:6px 16px;font-size:12px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);transition:all .2s;}
 .cur-tab.on{background:var(--buy);border-color:var(--buy);color:#fff;}
 
+/* ASSET SUB-TAB */
+.asset-tabs{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
+.asset-tabs::-webkit-scrollbar{display:none;}
+.asset-tab{flex-shrink:0;padding:5px 13px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);transition:all .2s;white-space:nowrap;}
+.asset-tab.on{background:var(--chip-on-bg);border-color:var(--chip-on-bg);color:var(--chip-on-text);font-weight:600;}
+.asset-tab.on[data-asset="Stock"]{background:var(--stock);border-color:var(--stock);color:#fff;}
+.asset-tab.on[data-asset="ETF"]{background:var(--etf);border-color:var(--etf);color:#fff;}
+.asset-tab.on[data-asset="Crypto"]{background:var(--coin);border-color:var(--coin);color:#fff;}
+.asset-tab.on[data-asset="Total"]{background:var(--buy);border-color:var(--buy);color:#fff;}
+
+/* YR CARD ASSET SECTION */
+.yr-asset-section{border-top:0.5px solid var(--border);margin-top:10px;padding-top:10px;}
+.yr-asset-label{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.yr-asset-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+
 /* EDIT OVERLAY on history item */
 .eitem{position:relative;overflow:hidden;}
 .eitem-edit-bar{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:center;justify-content:center;gap:10px;border-radius:6px;animation:fadeIn .18s ease;}
@@ -521,10 +536,17 @@ select option{background:var(--bg2);color:var(--text);}
         <div class="sec-hd" style="margin-bottom:0;">Asset Flow</div>
         <button class="expand-btn" onclick="openModal('flow')">⤢ Expand</button>
       </div>
-      <!-- Currency switcher -->
-      <div class="cur-tabs" style="margin-top:12px;">
+      <!-- Currency switcher (1차) -->
+      <div class="cur-tabs" style="margin-top:12px;" id="flow-cur-tabs">
         <button class="cur-tab on" onclick="setCur('KRW',this)">₩ KRW</button>
         <button class="cur-tab" onclick="setCur('USD',this)">$ USD</button>
+      </div>
+      <!-- Asset sub-tabs (2차) -->
+      <div class="asset-tabs" id="flow-asset-tabs">
+        <button class="asset-tab on" data-asset="Total" onclick="setAssetTab('Total',this)">Total</button>
+        <button class="asset-tab" data-asset="Stock" onclick="setAssetTab('Stock',this)">Stock</button>
+        <button class="asset-tab" data-asset="ETF" onclick="setAssetTab('ETF',this)">ETF</button>
+        <button class="asset-tab" data-asset="Crypto" onclick="setAssetTab('Crypto',this)">Crypto</button>
       </div>
       <div class="mgrid" id="flow-metrics"></div>
       <div class="clabel" style="margin-bottom:10px;">Yearly Summary</div>
@@ -788,9 +810,16 @@ function setChip(type,val,el){
 }
 
 /* ── CURRENCY TAB ── */
+let flowAsset='Total';
 function setCur(c,el){
   flowCurrency=c;
-  document.querySelectorAll('.cur-tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('#flow-cur-tabs .cur-tab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderFlow();
+}
+function setAssetTab(a,el){
+  flowAsset=a;
+  document.querySelectorAll('#flow-asset-tabs .asset-tab').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
   renderFlow();
 }
@@ -1109,33 +1138,25 @@ function renderFlow(){
   dC('flow');dC('net');
   const{years,r}=getYD();
   const isKRW=flowCurrency==='KRW';
+  const asset=flowAsset; // 'Total','Stock','ETF','Crypto'
 
-  // 원화 항목: isUSD=false, 달러 항목: isUSD=true
   const getKRW=e=>(!e.isUSD)?e.amt:0;
   const getUSD=e=>e.isUSD&&e.rate?e.amt/e.rate:0;
   const getAmtByCur=e=>isKRW?getKRW(e):getUSD(e);
 
-  // 전체 총합 (탭 무관)
-  const tB_krw=entries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getKRW(e),0);
-  const tS_krw=entries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getKRW(e),0);
-  const tB_usd=entries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getUSD(e),0);
-  const tS_usd=entries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getUSD(e),0);
-  const net_krw=tB_krw-tS_krw;
-  const net_usd=tB_usd-tS_usd;
+  // 자산 필터 함수
+  const assetFilter=e=>asset==='Total'?true:e.asset===asset;
 
-  // entries 개수 분리
-  const krwEntries=entries.filter(e=>!e.isUSD).length;
-  const usdEntries=entries.filter(e=>e.isUSD).length;
+  // 상단 통계: 통화 + 자산 탭 모두 적용
+  const filtered=entries.filter(assetFilter);
+  const tB=filtered.filter(e=>e.type==='BUY').reduce((a,e)=>a+getAmtByCur(e),0);
+  const tS=filtered.filter(e=>e.type==='SELL').reduce((a,e)=>a+getAmtByCur(e),0);
+  const net=tB-tS;
+  const entries_count=filtered.filter(e=>isKRW?!e.isUSD:e.isUSD).length;
+  const entries_label=isKRW?'KRW Entries':'USD Entries';
 
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
-
-  // 상단 통계: 선택된 통화만 표시 + entries 분리
-  const tB=isKRW?tB_krw:tB_usd;
-  const tS=isKRW?tS_krw:tS_usd;
-  const net=isKRW?net_krw:net_usd;
-  const entries_count=isKRW?krwEntries:usdEntries;
-  const entries_label=isKRW?'KRW Entries':'USD Entries';
 
   document.getElementById('flow-metrics').innerHTML=`
     <div class="mc"><div class="ml">Total Bought</div><div class="mv">${fmt(tB)}</div></div>
@@ -1143,38 +1164,36 @@ function renderFlow(){
     <div class="mc"><div class="ml">Net Invested</div><div class="mv ${net>=0?'pos':'neg'}">${fmt(net)}</div></div>
     <div class="mc"><div class="ml">${entries_label}</div><div class="mv">${entries_count}</div></div>`;
 
+  // asset 탭별 색상
+  const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
+  const yrColor=assetColor[asset]||'var(--buy)';
+  const yrSellColor='var(--sell)';
+
   const yrEl=document.getElementById('yr-summary');
   if(!years.length){yrEl.innerHTML='<div class="empty">No data yet</div>';}
   else{
-    const maxB=Math.max(...years.map(y=>entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getKRW(e),0)),1);
+    // yearly summary: 선택된 자산 + 선택된 통화 기준
+    const maxB=Math.max(...years.map(y=>
+      entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0)
+    ),1);
     yrEl.innerHTML=years.slice().reverse().map(y=>{
-      const buyKRW=entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getKRW(e),0);
-      const sellKRW=entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getKRW(e),0);
-      const netKRW=buyKRW-sellKRW;
-      const buyUSD=entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getUSD(e),0);
-      const sellUSD=entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getUSD(e),0);
-      const netUSD=buyUSD-sellUSD;
-      const pct=Math.round(buyKRW/maxB*100);
-      const hasKRW=buyKRW>0||sellKRW>0;
-      const hasUSD=buyUSD>0||sellUSD>0;
-      // KRW: 초록/빨강 기본 팔레트 / USD: 청록(#30B0C7) 계열로 구분
-      const krwBuyCol='var(--buy)';      // #34C759 green
-      const krwSellCol='var(--sell)';    // #FF3B30 red
-      const usdBuyCol='#30B0C7';         // teal-blue
-      const usdSellCol='#FF9500';        // amber
+      const buyAmt=entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
+      const sellAmt=entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
+      const netAmt=buyAmt-sellAmt;
+      const pct=Math.round(buyAmt/maxB*100);
+      const hasData=buyAmt>0||sellAmt>0;
       return`<div class="yr-card" onclick="openMonthModal('${y}')">
         <div class="yr-title">${y}</div>
-        ${hasKRW?`
-        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--buy);display:inline-block;flex-shrink:0;"></span>KRW ₩</div>
-        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${krwBuyCol};">${fmtWon(buyKRW)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${krwSellCol};">${fmtWon(sellKRW)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netKRW>=0?krwBuyCol:krwSellCol};">${netKRW>=0?'+':''}${fmtWon(netKRW)}</span></div>`:''}
-        ${hasUSD?`
-        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin:${hasKRW?'10px':0} 0 5px;${hasKRW?'border-top:0.5px solid var(--border);padding-top:10px;':''}display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#30B0C7;display:inline-block;flex-shrink:0;"></span>USD $</div>
-        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${usdBuyCol};">${fmtUSD(buyUSD)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${usdSellCol};">${fmtUSD(sellUSD)}</span></div>
-        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netUSD>=0?usdBuyCol:usdSellCol};">${netUSD>=0?'+':''}${fmtUSD(netUSD)}</span></div>`:''}
-        <div class="yr-bar"><div class="yr-fill" style="width:${pct}%;"></div></div>
+        ${hasData?`
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:${yrColor};display:inline-block;flex-shrink:0;"></span>
+          ${asset} · ${isKRW?'KRW ₩':'USD $'}
+        </div>
+        <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${yrColor};">${fmt(buyAmt)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${yrSellColor};">${fmt(sellAmt)}</span></div>
+        <div class="yr-row"><span class="yr-lbl">NET</span><span class="yr-val" style="color:${netAmt>=0?yrColor:yrSellColor};">${netAmt>=0?'+':''}${fmt(netAmt)}</span></div>`
+        :'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:4px 0;">No data</div>'}
+        <div class="yr-bar"><div class="yr-fill" style="width:${pct}%;background:${yrColor};"></div></div>
         <div class="yr-card-tap">탭하여 월별 통계 보기 →</div>
       </div>`;
     }).join('');
@@ -1300,23 +1319,26 @@ function setMonthCur(c,el){
 function renderMonthModal(){
   const y=monthYear;if(!y)return;
   const isKRW=monthCur==='KRW';
+  const asset=flowAsset; // 상단 2차 탭 상태 그대로 반영
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const getVal=e=>isKRW?((!e.isUSD)?e.amt:0):(e.isUSD&&e.rate?e.amt/e.rate:0);
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
+  const assetFilter=e=>asset==='Total'?true:e.asset===asset;
+  const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
+  const buyColor=assetColor[asset]||'var(--buy)';
 
-  // Build month data
+  // Build month data (자산 필터 적용)
   const data=MONTHS.map((_,mi)=>{
     const mo=String(mi+1).padStart(2,'0');
-    const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo));
+    const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo)&&assetFilter(e));
     const buy=mEntries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getVal(e),0);
     const sell=mEntries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getVal(e),0);
     return{buy,sell,net:buy-sell,count:mEntries.length};
   });
 
-  // If annual mode (dk = year only), distribute to year overview
-  const annEntries=entries.filter(e=>e.dk===y);
-  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-'));
+  const annEntries=entries.filter(e=>e.dk===y&&assetFilter(e));
+  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-')&&assetFilter(e));
 
   const maxBuy=Math.max(...data.map(d=>d.buy),1);
 
@@ -1325,10 +1347,12 @@ function renderMonthModal(){
   const labels=MONTHS;
   const buyVals=data.map(d=>Math.round(d.buy));
   const sellVals=data.map(d=>Math.round(d.sell));
+  // buyColor hex to rgba
+  const buyRgba=asset==='Stock'?'rgba(0,122,255,.7)':asset==='ETF'?'rgba(48,176,199,.7)':asset==='Crypto'?'rgba(175,82,222,.7)':'rgba(52,199,89,.7)';
   monthChart=new Chart(document.getElementById('c-month'),{
     type:'bar',
     data:{labels,datasets:[
-      {label:'Buy',data:buyVals,backgroundColor:'rgba(52,199,89,.7)',borderRadius:3,stack:'a'},
+      {label:'Buy',data:buyVals,backgroundColor:buyRgba,borderRadius:3,stack:'a'},
       {label:'Sell',data:sellVals,backgroundColor:'rgba(255,59,48,.55)',borderRadius:3,stack:'b'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
@@ -1340,12 +1364,14 @@ function renderMonthModal(){
   // List
   const totalBuy=data.reduce((a,d)=>a+d.buy,0);
   const totalSell=data.reduce((a,d)=>a+d.sell,0);
-  const activeMonths=data.filter(d=>d.buy>0||d.sell>0);
+
+  // 모달 타이틀에 자산 표시
+  document.getElementById('month-modal-title').textContent=`${y} · ${asset}`;
 
   let html=`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
-    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--buy);">${fmt(totalBuy)}</div></div>
+    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${buyColor};">${fmt(totalBuy)}</div></div>
     <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL SELL</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--sell);">${fmt(totalSell)}</div></div>
-    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?'var(--buy)':'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
+    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?buyColor:'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
   </div>`;
 
   if(!hasMonthly&&annEntries.length>0){
@@ -1356,9 +1382,9 @@ function renderMonthModal(){
       const pct=Math.round(d.buy/maxBuy*100);
       return`<div class="mo-row">
         <div class="mo-name">${MONTHS[mi]}</div>
-        <div class="mo-bar-wrap"><div class="mo-bar-fill" style="width:${pct}%;"></div></div>
+        <div class="mo-bar-wrap"><div class="mo-bar-fill" style="width:${pct}%;background:${buyColor};"></div></div>
         <div class="mo-vals">
-          <div style="color:var(--buy);">${fmt(d.buy)}</div>
+          <div style="color:${buyColor};">${fmt(d.buy)}</div>
           ${d.sell>0?`<div class="mo-sell">−${fmt(d.sell)}</div>`:''}
         </div>
       </div>`;
