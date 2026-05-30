@@ -356,6 +356,14 @@ select option{background:var(--bg2);color:var(--text);}
   </div>
   <div class="chart-modal-body"><canvas id="mc-pie"></canvas></div>
 </div>
+<div class="chart-modal" id="modal-indivCrypto">
+  <div class="landscape-hint">↺ 기기를 가로로 돌리면 더 넓게 볼 수 있어요</div>
+  <div class="chart-modal-bar">
+    <span class="chart-modal-title">Indiv. vs Crypto</span>
+    <button class="modal-close" onclick="closeModal('indivCrypto')">✕</button>
+  </div>
+  <div class="chart-modal-body"><canvas id="mc-indiv-crypto"></canvas></div>
+</div>
 
 <!-- EDIT ENTRY MODAL -->
 <div class="edit-modal" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
@@ -387,9 +395,9 @@ select option{background:var(--bg2);color:var(--text);}
       <div class="month-modal-title" id="month-modal-title">2025 Monthly</div>
       <button class="month-close" onclick="closeMonthModal()">✕</button>
     </div>
-    <div class="cur-tabs" style="margin-bottom:16px;" id="month-cur-tabs">
-      <button class="cur-tab on" onclick="setMonthCur('KRW',this)">₩ KRW</button>
-      <button class="cur-tab" onclick="setMonthCur('USD',this)">$ USD</button>
+    <div style="display:flex;gap:5px;margin-bottom:16px;" id="month-cur-tabs">
+      <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--buy);border-radius:20px;cursor:pointer;background:var(--buy);color:#fff;" class="cur-tab on" onclick="setMonthCur('KRW',this)">₩ KRW</button>
+      <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);" class="cur-tab" onclick="setMonthCur('USD',this)">$ USD</button>
     </div>
     <div id="month-chart-wrap" style="height:180px;margin-bottom:14px;"><canvas id="c-month"></canvas></div>
     <div id="month-list"></div>
@@ -453,9 +461,9 @@ select option{background:var(--bg2);color:var(--text);}
 
         <div class="step-lbl"><span class="snum">3</span>Asset Class</div>
         <div class="chips" id="chips-asset">
-          <button class="chip on" onclick="setChip('asset','Stock',this)">Stock</button>
-          <button class="chip"    onclick="setChip('asset','Crypto',this)">Crypto</button>
+          <button class="chip on" onclick="setChip('asset','Stock',this)">Indiv.</button>
           <button class="chip"    onclick="setChip('asset','ETF',this)">ETF</button>
+          <button class="chip"    onclick="setChip('asset','Crypto',this)">Crypto</button>
         </div>
 
         <div class="step-lbl"><span class="snum">4</span><span id="ticker-lbl">Equity — Ticker</span></div>
@@ -520,11 +528,16 @@ select option{background:var(--bg2);color:var(--text);}
         <button class="fbtn on" onclick="hf('All',this)">All</button>
         <button class="fbtn" onclick="hf('Domestic',this)">Domestic</button>
         <button class="fbtn" onclick="hf('Overseas',this)">Overseas</button>
-        <button class="fbtn" onclick="hf('Stock',this)">Stock</button>
+        <button class="fbtn" onclick="hf('Stock',this)">Indiv.</button>
         <button class="fbtn" onclick="hf('Crypto',this)">Crypto</button>
         <button class="fbtn" onclick="hf('ETF',this)">ETF</button>
         <button class="fbtn" onclick="hf('BUY',this)">BUY</button>
         <button class="fbtn" onclick="hf('SELL',this)">SELL</button>
+        <button class="fbtn" onclick="hf('General',this)">General</button>
+        <button class="fbtn" onclick="hf('ISA',this)">ISA</button>
+        <button class="fbtn" onclick="hf('IRP',this)">IRP</button>
+        <button class="fbtn" onclick="hf('연금저축',this)">연금저축</button>
+        <button class="fbtn" onclick="hf('기타',this)">기타</button>
       </div>
       <div class="card" id="hist-list"><div class="empty">No records yet</div></div>
       <button class="csv-btn" onclick="exportCSV()">⬇ Export CSV</button>
@@ -536,19 +549,34 @@ select option{background:var(--bg2);color:var(--text);}
         <div class="sec-hd" style="margin-bottom:0;">Asset Flow</div>
         <button class="expand-btn" onclick="openModal('flow')">⤢ Expand</button>
       </div>
-      <!-- Currency switcher (1차) -->
-      <div class="cur-tabs" style="margin-top:12px;" id="flow-cur-tabs">
-        <button class="cur-tab on" onclick="setCur('KRW',this)">₩ KRW</button>
-        <button class="cur-tab" onclick="setCur('USD',this)">$ USD</button>
+      <!-- Currency switcher (1차) - 작게 -->
+      <div style="display:flex;gap:5px;margin-top:10px;margin-bottom:8px;" id="flow-cur-tabs">
+        <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--buy);border-color:var(--buy);color:#fff;" class="cur-tab on" onclick="setCur('KRW',this)">₩ KRW</button>
+        <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);" class="cur-tab" onclick="setCur('USD',this)">$ USD</button>
       </div>
-      <!-- Asset sub-tabs (2차) -->
-      <div class="asset-tabs" id="flow-asset-tabs">
+      <!-- Asset sub-tabs (2차) - 크게 -->
+      <div class="asset-tabs" style="margin-bottom:8px;" id="flow-asset-tabs">
         <button class="asset-tab on" data-asset="Total" onclick="setAssetTab('Total',this)">Total</button>
-        <button class="asset-tab" data-asset="Stock" onclick="setAssetTab('Stock',this)">Stock</button>
+        <button class="asset-tab" data-asset="Stock" onclick="setAssetTab('Stock',this)">Indiv.</button>
         <button class="asset-tab" data-asset="ETF" onclick="setAssetTab('ETF',this)">ETF</button>
         <button class="asset-tab" data-asset="Crypto" onclick="setAssetTab('Crypto',this)">Crypto</button>
       </div>
-      <div class="mgrid" id="flow-metrics"></div>
+      <!-- Account type filter -->
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;" id="flow-account-tabs">
+        <button class="fbtn on" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('All',this)">All Acct</button>
+        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('General',this)">General</button>
+        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('ISA',this)">ISA</button>
+        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('IRP',this)">IRP</button>
+        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('연금저축',this)">연금저축</button>
+        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('기타',this)">기타</button>
+      </div>
+      <!-- Ticker filter -->
+      <div style="margin-bottom:12px;">
+        <select id="flow-ticker-select" onchange="setFlowTicker(this.value)" style="font-size:12px;padding:6px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:var(--mono);width:100%;outline:none;">
+          <option value="All">All Tickers</option>
+        </select>
+      </div>
+      <div id="flow-metrics"></div>
       <div class="clabel" style="margin-bottom:10px;">Yearly Summary</div>
       <div id="yr-summary"></div>
       <div class="card">
@@ -570,7 +598,7 @@ select option{background:var(--bg2);color:var(--text);}
           <div class="clabel" style="margin-bottom:0;">Asset Mix by Year</div>
           <button class="expand-btn" onclick="openModal('alloc')">⤢ Expand</button>
         </div>
-        <div class="legend"><span><i style="background:var(--stock);"></i>Stock</span><span><i style="background:var(--coin);"></i>Crypto</span><span><i style="background:var(--etf);"></i>ETF</span></div>
+        <div class="legend"><span><i style="background:var(--stock);"></i>Indiv.+ETF</span><span><i style="background:var(--coin);"></i>Crypto</span></div>
         <div class="cwrap" style="height:170px;"><canvas id="c-alloc">Alloc</canvas></div>
       </div>
       <div class="card">
@@ -582,17 +610,10 @@ select option{background:var(--bg2);color:var(--text);}
       </div>
       <div class="card">
         <div class="card-hd">
-          <div class="clabel" style="margin-bottom:0;">Domestic vs Overseas</div>
-          <button class="expand-btn" onclick="openModal('region')">⤢ Expand</button>
+          <div class="clabel" style="margin-bottom:0;">Indiv. vs Crypto</div>
+          <button class="expand-btn" onclick="openModal('indivCrypto')">⤢ Expand</button>
         </div>
-        <div class="cwrap" style="height:210px;"><canvas id="c-region">Region</canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="clabel" style="margin-bottom:0;">KRW vs USD</div>
-          <button class="expand-btn" onclick="openModal('currency')">⤢ Expand</button>
-        </div>
-        <div class="cwrap" style="height:210px;"><canvas id="c-currency">Currency</canvas></div>
+        <div class="cwrap" style="height:210px;"><canvas id="c-indiv-crypto">IndivCrypto</canvas></div>
       </div>
     </div>
 
@@ -811,17 +832,42 @@ function setChip(type,val,el){
 
 /* ── CURRENCY TAB ── */
 let flowAsset='Total';
+let flowAccount='All';
+let flowTicker='All';
+
 function setCur(c,el){
   flowCurrency=c;
-  document.querySelectorAll('#flow-cur-tabs .cur-tab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
+  document.querySelectorAll('#flow-cur-tabs .cur-tab').forEach(b=>{
+    b.style.background=b===el?'var(--buy)':'var(--bg3)';
+    b.style.borderColor=b===el?'var(--buy)':'var(--border2)';
+    b.style.color=b===el?'#fff':'var(--text3)';
+    b.classList.toggle('on',b===el);
+  });
   renderFlow();
 }
 function setAssetTab(a,el){
   flowAsset=a;
   document.querySelectorAll('#flow-asset-tabs .asset-tab').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
+  updateFlowTickerOptions();
   renderFlow();
+}
+function setFlowAccount(a,el){
+  flowAccount=a;
+  document.querySelectorAll('#flow-account-tabs .fbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderFlow();
+}
+function setFlowTicker(val){
+  flowTicker=val;
+  renderFlow();
+}
+function updateFlowTickerOptions(){
+  const sel=document.getElementById('flow-ticker-select');
+  if(!sel)return;
+  const asset=flowAsset;
+  const tickers=[...new Set(entries.filter(e=>asset==='Total'||e.asset===asset).map(e=>e.ticker).filter(Boolean))].sort();
+  sel.innerHTML='<option value="All">All Tickers</option>'+tickers.map(t=>`<option value="${t}"${flowTicker===t?' selected':''}>${t}</option>`).join('');
 }
 
 /* ── MODAL / FULLSCREEN CHARTS ── */
@@ -829,7 +875,7 @@ function openModal(name){
   document.getElementById('modal-'+name).classList.add('open');
   document.body.style.overflow='hidden';
   // Auto-rotate to landscape for flow/stats charts
-  if(name==='flow'||name==='alloc'||name==='region'||name==='pie'){
+  if(name==='flow'||name==='alloc'||name==='pie'||name==='indivCrypto'){
     if(screen.orientation&&screen.orientation.lock){
       screen.orientation.lock('landscape').catch(()=>{});
     }
@@ -865,10 +911,11 @@ function renderModalChart(name){
     const c2=new Chart(document.getElementById('mc-net'),{type:'bar',data:{labels:years,datasets:[{data:nv,backgroundColor:nv.map(v=>v>=0?'rgba(52,199,89,.7)':'rgba(255,59,48,.65)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{...TKM(),callback:fmtAx},grid:GRM(),border:{display:false}},x:{ticks:{...TKM(),autoSkip:false},grid:{display:false},border:{display:false}}}}});
     modalCharts[name]=[c1,c2];
   }else if(name==='alloc'){
+    const getDomAmtM=e=>(!e.isUSD)?e.amt:0;
+    const domByAssetYearM=(asset,y)=>entries.filter(e=>e.type==='BUY'&&e.asset===asset&&e.region==='Domestic'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getDomAmtM(e),0);
     const c=new Chart(document.getElementById('mc-alloc'),{type:'bar',data:{labels:years,datasets:[
-      {label:'Stock', data:years.map(y=>Math.round(r[y].buy['Stock'])), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
-      {label:'Crypto',data:years.map(y=>Math.round(r[y].buy['Crypto'])),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'},
-      {label:'ETF',  data:years.map(y=>Math.round(r[y].buy['ETF'])),   backgroundColor:'rgba(48,176,199,.75)',borderRadius:3,stack:'a'}
+      {label:'Indiv.+ETF', data:years.map(y=>Math.round(domByAssetYearM('Stock',y)+domByAssetYearM('ETF',y))), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
+      {label:'Crypto',data:years.map(y=>Math.round(domByAssetYearM('Crypto',y))),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'}
     ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TKM().color,font:{size:12},padding:14}}},scales:{x:{stacked:true,ticks:{...TKM(),autoSkip:false},grid:{display:false},border:{display:false}},y:{stacked:true,ticks:{...TKM(),callback:v=>fmtAxisKRW(v)},grid:GRM(),border:{display:false}}}}});
     modalCharts[name]=[c];
   }else if(name==='currency'){
@@ -888,15 +935,24 @@ function renderModalChart(name){
     const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+getDomAmtP(e),0);
     const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+getDomAmtP(e),0);
     const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+getDomAmtP(e),0);
-    const tot=ts+tc+te||1;
-    const c=new Chart(document.getElementById('mc-pie'),{type:'doughnut',data:{labels:[`Stock  ${fmtWon(ts)} (${Math.round(ts/tot*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot*100)}%)`,`ETF  ${fmtWon(te)} (${Math.round(te/tot*100)}%)`],datasets:[{data:[Math.round(ts),Math.round(tc),Math.round(te)],backgroundColor:['#007AFF','#AF52DE','#30B0C7'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}}}}});
+    const tIndiv=ts+te;
+    const tot=tIndiv+tc||1;
+    const c=new Chart(document.getElementById('mc-pie'),{type:'doughnut',data:{labels:[`Indiv.+ETF  ${fmtWon(tIndiv)} (${Math.round(tIndiv/tot*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot*100)}%)`],datasets:[{data:[Math.round(tIndiv),Math.round(tc)],backgroundColor:['#007AFF','#AF52DE'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}}}}});
+    modalCharts[name]=[c];
+  }else if(name==='indivCrypto'){
+    const getDomAmtIC=e=>(!e.isUSD)?e.amt:0;
+    const ts2=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+getDomAmtIC(e),0);
+    const tc2=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+getDomAmtIC(e),0);
+    const te2=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+getDomAmtIC(e),0);
+    const tot2=ts2+tc2+te2||1;
+    const c=new Chart(document.getElementById('mc-indiv-crypto'),{type:'doughnut',data:{labels:[`Indiv.  ${fmtWon(ts2)} (${Math.round(ts2/tot2*100)}%)`,`ETF  ${fmtWon(te2)} (${Math.round(te2/tot2*100)}%)`,`Crypto  ${fmtWon(tc2)} (${Math.round(tc2/tot2*100)}%)`],datasets:[{data:[Math.round(ts2),Math.round(te2),Math.round(tc2)],backgroundColor:['#007AFF','#30B0C7','#AF52DE'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:TKM().color,font:{size:13},padding:16,usePointStyle:true,pointStyleWidth:9}}}}});
     modalCharts[name]=[c];
   }
 }
 // Allow physical rotation or escape
 window.addEventListener('orientationchange',()=>{
-  ['flow','alloc','region','pie'].forEach(n=>{
-    if(document.getElementById('modal-'+n).classList.contains('open')) renderModalChart(n);
+  ['flow','alloc','pie','indivCrypto'].forEach(n=>{
+    if(document.getElementById('modal-'+n)?.classList.contains('open')) renderModalChart(n);
   });
 });
 
@@ -974,7 +1030,7 @@ function go(id){
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
   document.getElementById('pg-'+id).classList.add('active');
   document.querySelectorAll('.bn')[{rec:0,hist:1,flow:2,alloc:3,goal:4}[id]].classList.add('on');
-  if(id==='hist')renderHist();if(id==='flow')renderFlow();if(id==='alloc')renderAlloc();if(id==='goal')renderGoal();
+  if(id==='hist')renderHist();if(id==='flow'){updateFlowTickerOptions();renderFlow();}if(id==='alloc')renderAlloc();if(id==='goal')renderGoal();
 }
 function renderCurrent(){go(document.querySelector('.page.active').id.replace('pg-',''));}
 function setT(t,el){tradeType=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
@@ -1008,6 +1064,7 @@ function renderHist(){
   if(['Domestic','Overseas'].includes(histFilter))list=list.filter(e=>e.region===histFilter);
   else if(['Stock','Crypto','ETF'].includes(histFilter))list=list.filter(e=>e.asset===histFilter);
   else if(['BUY','SELL'].includes(histFilter))list=list.filter(e=>e.type===histFilter);
+  else if(['General','ISA','IRP','연금저축','기타'].includes(histFilter))list=list.filter(e=>e.account===histFilter);
   list.reverse();
   const el=document.getElementById('hist-list');
   if(!list.length){el.innerHTML='<div class="empty">No records found</div>';return;}
@@ -1146,9 +1203,18 @@ function renderFlow(){
 
   // 자산 필터 함수
   const assetFilter=e=>asset==='Total'?true:e.asset===asset;
+  // 어카운트 필터
+  const accountFilter=e=>flowAccount==='All'?true:e.account===flowAccount;
+  // 티커 필터
+  const tickerFilter=e=>flowTicker==='All'?true:e.ticker===flowTicker;
+  // 통합 필터
+  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
 
-  // 상단 통계: 통화 + 자산 탭 모두 적용
-  const filtered=entries.filter(assetFilter);
+  // 티커 옵션 업데이트
+  updateFlowTickerOptions();
+
+  // 상단 통계: 통화 + 자산 + 어카운트 + 티커 탭 모두 적용
+  const filtered=entries.filter(fullFilter);
   const tB=filtered.filter(e=>e.type==='BUY').reduce((a,e)=>a+getAmtByCur(e),0);
   const tS=filtered.filter(e=>e.type==='SELL').reduce((a,e)=>a+getAmtByCur(e),0);
   const net=tB-tS;
@@ -1158,11 +1224,28 @@ function renderFlow(){
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
 
+  // Net Invested 크게, Bought/Sold 작게
   document.getElementById('flow-metrics').innerHTML=`
-    <div class="mc"><div class="ml">Total Bought</div><div class="mv">${fmt(tB)}</div></div>
-    <div class="mc"><div class="ml">Total Sold</div><div class="mv">${fmt(tS)}</div></div>
-    <div class="mc"><div class="ml">Net Invested</div><div class="mv ${net>=0?'pos':'neg'}">${fmt(net)}</div></div>
-    <div class="mc"><div class="ml">${entries_label}</div><div class="mv">${entries_count}</div></div>`;
+    <div style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:16px 15px;margin-bottom:11px;box-shadow:var(--shadow);">
+      <div style="text-align:center;margin-bottom:10px;">
+        <div class="ml" style="margin-bottom:4px;">Net Invested</div>
+        <div style="font-family:var(--mono);font-size:26px;font-weight:700;color:${net>=0?'var(--buy)':'var(--sell)'};">${fmt(net)}</div>
+      </div>
+      <div style="display:flex;gap:9px;">
+        <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:9px 10px;">
+          <div class="ml" style="margin-bottom:3px;">Total Bought</div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--buy);">${fmt(tB)}</div>
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:9px 10px;">
+          <div class="ml" style="margin-bottom:3px;">Total Sold</div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--sell);">${fmt(tS)}</div>
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:9px 10px;">
+          <div class="ml" style="margin-bottom:3px;">${entries_label}</div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:500;">${entries_count}</div>
+        </div>
+      </div>
+    </div>`;
 
   // asset 탭별 색상
   const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
@@ -1174,20 +1257,22 @@ function renderFlow(){
   else{
     // yearly summary: 선택된 자산 + 선택된 통화 기준
     const maxB=Math.max(...years.map(y=>
-      entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0)
+      entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0)
     ),1);
     yrEl.innerHTML=years.slice().reverse().map(y=>{
-      const buyAmt=entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
-      const sellAmt=entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)===y&&assetFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
+      const buyAmt=entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
+      const sellAmt=entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)===y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0);
       const netAmt=buyAmt-sellAmt;
       const pct=Math.round(buyAmt/maxB*100);
       const hasData=buyAmt>0||sellAmt>0;
+      // 현재 선택된 필터 표시
+      const filterBadge=`${asset==='Stock'?'Indiv.':asset}${flowAccount!=='All'?' · '+flowAccount:''}${flowTicker!=='All'?' · '+flowTicker:''}`;
       return`<div class="yr-card" onclick="openMonthModal('${y}')">
         <div class="yr-title">${y}</div>
         ${hasData?`
         <div style="font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px;">
           <span style="width:6px;height:6px;border-radius:50%;background:${yrColor};display:inline-block;flex-shrink:0;"></span>
-          ${asset} · ${isKRW?'KRW ₩':'USD $'}
+          ${filterBadge} · ${isKRW?'KRW ₩':'USD $'}
         </div>
         <div class="yr-row"><span class="yr-lbl">BOUGHT</span><span class="yr-val" style="color:${yrColor};">${fmt(buyAmt)}</span></div>
         <div class="yr-row"><span class="yr-lbl">SOLD</span><span class="yr-val" style="color:${yrSellColor};">${fmt(sellAmt)}</span></div>
@@ -1199,62 +1284,49 @@ function renderFlow(){
     }).join('');
   }
   if(!years.length)return;
-  const cbs=years.map(y=>entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)<=y).reduce((a,e)=>a+getAmtByCur(e),0));
-  const css2=years.map(y=>entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)<=y).reduce((a,e)=>a+getAmtByCur(e),0));
+  const cbs=years.map(y=>entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)<=y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0));
+  const css2=years.map(y=>entries.filter(e=>e.type==='SELL'&&e.dk.slice(0,4)<=y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0));
   charts['flow']=new Chart(document.getElementById('c-flow'),{type:'line',data:{labels:years,datasets:[
     {data:cbs,borderColor:'#34C759',backgroundColor:'rgba(52,199,89,.08)',tension:.4,fill:true,borderWidth:2,pointRadius:3,pointBackgroundColor:'#34C759'},
     {data:css2,borderColor:'#FF3B30',backgroundColor:'rgba(255,59,48,.04)',tension:.4,fill:true,borderWidth:2,pointRadius:3,pointBackgroundColor:'#FF3B30',borderDash:[5,4]}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.datasetIndex===0?'Buy':'Sell'}: ${fmt(c.raw)}`}}},scales:{y:{ticks:{...TK(),callback:fmtAx},grid:GR(),border:{display:false}},x:{ticks:{...TK(),autoSkip:false,maxRotation:45},grid:{display:false},border:{display:false}}}}});
-  const nv=years.map(y=>entries.filter(e=>e.dk.slice(0,4)===y).reduce((a,e)=>e.type==='BUY'?a+getAmtByCur(e):a-getAmtByCur(e),0));
+  const nv=years.map(y=>entries.filter(e=>e.dk.slice(0,4)===y&&fullFilter(e)).reduce((a,e)=>e.type==='BUY'?a+getAmtByCur(e):a-getAmtByCur(e),0));
   charts['net']=new Chart(document.getElementById('c-net'),{type:'bar',data:{labels:years,datasets:[{data:nv,backgroundColor:nv.map(v=>v>=0?'rgba(52,199,89,.7)':'rgba(255,59,48,.65)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Net: ${fmt(c.raw)}`}}},scales:{y:{ticks:{...TK(),callback:fmtAx},grid:GR(),border:{display:false}},x:{ticks:{...TK(),autoSkip:false,maxRotation:45},grid:{display:false},border:{display:false}}}}});
 }
 
 /* ── PORTFOLIO ── */
 function renderAlloc(){
-  dC('alloc');dC('region');dC('pie');
+  dC('alloc');dC('pie');dC('indivCrypto');
   const{years,r}=getYD();
   if(!years.length)return;
 
-  // Asset Mix by Year: Domestic은 원화(isUSD=false), Overseas는 USD 달러값(isUSD=true, rate로 역산)
-  // 차트에서는 각 통화 그대로 사용 (혼합 표시 - 분리 불가능한 bar는 원화 기준)
-  // Stock/Crypto/ETF: domestic entries → KRW amt, overseas entries → USD amt (별도 계산)
   const getDomAmt=e=>(!e.isUSD)?e.amt:0;  // 원화 입력
   const getOvsAmt=e=>e.isUSD&&e.rate?e.amt/e.rate:0; // 달러 입력 → USD
 
-  // Asset mix bar: domestic KRW only (원화 기준 domestic 분리)
+  // Asset mix bar: ETF+Stock 합산, Crypto 별도
   const domByAssetYear=(asset,y)=>entries.filter(e=>e.type==='BUY'&&e.asset===asset&&e.region==='Domestic'&&e.dk.slice(0,4)===y).reduce((a,e)=>a+getDomAmt(e),0);
 
   charts['alloc']=new Chart(document.getElementById('c-alloc'),{type:'bar',data:{labels:years,datasets:[
-    {label:'Stock', data:years.map(y=>Math.round(domByAssetYear('Stock',y))), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
-    {label:'Crypto',data:years.map(y=>Math.round(domByAssetYear('Crypto',y))),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'},
-    {label:'ETF',  data:years.map(y=>Math.round(domByAssetYear('ETF',y))),   backgroundColor:'rgba(48,176,199,.75)',borderRadius:3,stack:'a'}
+    {label:'Indiv.+ETF', data:years.map(y=>Math.round(domByAssetYear('Stock',y)+domByAssetYear('ETF',y))), backgroundColor:'rgba(0,122,255,.75)',borderRadius:3,stack:'a'},
+    {label:'Crypto',data:years.map(y=>Math.round(domByAssetYear('Crypto',y))),backgroundColor:'rgba(175,82,222,.75)',borderRadius:3,stack:'a'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtWon(c.raw)}`}}},scales:{x:{stacked:true,ticks:{...TK(),autoSkip:false,maxRotation:45},grid:{display:false},border:{display:false}},y:{stacked:true,ticks:{...TK(),callback:v=>fmtAxisKRW(v)},grid:GR(),border:{display:false}}}}});
 
-  // Domestic vs Overseas: 원화/달러 분리, 아이콘 없이
-  const domT=entries.filter(e=>e.type==='BUY'&&e.region==='Domestic').reduce((a,e)=>a+getDomAmt(e),0);
-  const ovsT=entries.filter(e=>e.type==='BUY'&&e.region==='Overseas').reduce((a,e)=>a+getOvsAmt(e),0);
-  charts['region']=new Chart(document.getElementById('c-region'),{type:'doughnut',
-    data:{labels:[`Domestic  ${fmtWon(domT)}`,`Overseas  ${fmtUSD(ovsT)}`],
-      datasets:[{data:[Math.round(domT), Math.round(ovsT*1000)],backgroundColor:['#FF9500','#FF2D55'],borderWidth:0,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>c.dataIndex===0?fmtWon(c.raw):fmtUSD(c.raw/1000)}}}}});
-
-  // KRW vs USD 분류 도넛
-  const krwTotal=entries.filter(e=>e.type==='BUY'&&!e.isUSD).reduce((a,e)=>a+e.amt,0);
-  const usdTotal=entries.filter(e=>e.type==='BUY'&&e.isUSD&&e.rate).reduce((a,e)=>a+e.amt/e.rate,0);
-  dC('currency');
-  charts['currency']=new Chart(document.getElementById('c-currency'),{type:'doughnut',
-    data:{labels:[`KRW  ${fmtWon(krwTotal)}`,`USD  ${fmtUSD(usdTotal)}`],
-      datasets:[{data:[Math.round(krwTotal), Math.round(usdTotal*1000)],backgroundColor:['#30B0C7','#AF52DE'],borderWidth:0,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>c.dataIndex===0?fmtWon(c.raw):fmtUSD(c.raw/1000)}}}}});
-
-  // Total Asset Mix: stock/crypto/etf 원화 기준 domestic
+  // Total Asset Mix pie: Stock+ETF 합산 vs Crypto
   const ts=entries.filter(e=>e.type==='BUY'&&e.asset==='Stock').reduce((a,e)=>a+getDomAmt(e),0);
   const tc=entries.filter(e=>e.type==='BUY'&&e.asset==='Crypto').reduce((a,e)=>a+getDomAmt(e),0);
   const te=entries.filter(e=>e.type==='BUY'&&e.asset==='ETF').reduce((a,e)=>a+getDomAmt(e),0);
-  const tot3=ts+tc+te||1;
+  const tIndiv=ts+te; // Stock+ETF 합산
+  const tot3=tIndiv+tc||1;
   charts['pie']=new Chart(document.getElementById('c-pie'),{type:'doughnut',
-    data:{labels:[`Stock  ${fmtWon(ts)} (${Math.round(ts/tot3*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot3*100)}%)`,`ETF  ${fmtWon(te)} (${Math.round(te/tot3*100)}%)`],
-      datasets:[{data:[Math.round(ts),Math.round(tc),Math.round(te)],backgroundColor:['#007AFF','#AF52DE','#30B0C7'],borderWidth:0,hoverOffset:6}]},
+    data:{labels:[`Indiv.+ETF  ${fmtWon(tIndiv)} (${Math.round(tIndiv/tot3*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/tot3*100)}%)`],
+      datasets:[{data:[Math.round(tIndiv),Math.round(tc)],backgroundColor:['#007AFF','#AF52DE'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>`${fmtWon(c.raw)}`}}}}});
+
+  // Indiv. vs Crypto (ETF 포함 Indiv. 상세: Stock vs ETF vs Crypto)
+  const totAll=ts+tc+te||1;
+  charts['indivCrypto']=new Chart(document.getElementById('c-indiv-crypto'),{type:'doughnut',
+    data:{labels:[`Indiv.  ${fmtWon(ts)} (${Math.round(ts/totAll*100)}%)`,`ETF  ${fmtWon(te)} (${Math.round(te/totAll*100)}%)`,`Crypto  ${fmtWon(tc)} (${Math.round(tc/totAll*100)}%)`],
+      datasets:[{data:[Math.round(ts),Math.round(te),Math.round(tc)],backgroundColor:['#007AFF','#30B0C7','#AF52DE'],borderWidth:0,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:TK().color,font:{size:11},padding:12,usePointStyle:true,pointStyleWidth:8}},tooltip:{callbacks:{label:c=>`${fmtWon(c.raw)}`}}}}});
 }
 
@@ -1312,8 +1384,12 @@ function closeMonthModal(){
 }
 function setMonthCur(c,el){
   monthCur=c;
-  document.querySelectorAll('#month-cur-tabs .cur-tab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
+  document.querySelectorAll('#month-cur-tabs .cur-tab').forEach(b=>{
+    b.style.background=b===el?'var(--buy)':'var(--bg3)';
+    b.style.borderColor=b===el?'var(--buy)':'var(--border2)';
+    b.style.color=b===el?'#fff':'var(--text3)';
+    b.classList.toggle('on',b===el);
+  });
   renderMonthModal();
 }
 function renderMonthModal(){
@@ -1325,20 +1401,23 @@ function renderMonthModal(){
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
   const assetFilter=e=>asset==='Total'?true:e.asset===asset;
+  const accountFilter=e=>flowAccount==='All'?true:e.account===flowAccount;
+  const tickerFilter=e=>flowTicker==='All'?true:e.ticker===flowTicker;
+  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
   const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
   const buyColor=assetColor[asset]||'var(--buy)';
 
-  // Build month data (자산 필터 적용)
+  // Build month data (자산 + 어카운트 + 티커 필터 적용)
   const data=MONTHS.map((_,mi)=>{
     const mo=String(mi+1).padStart(2,'0');
-    const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo)&&assetFilter(e));
+    const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo)&&fullFilter(e));
     const buy=mEntries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getVal(e),0);
     const sell=mEntries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getVal(e),0);
     return{buy,sell,net:buy-sell,count:mEntries.length};
   });
 
-  const annEntries=entries.filter(e=>e.dk===y&&assetFilter(e));
-  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-')&&assetFilter(e));
+  const annEntries=entries.filter(e=>e.dk===y&&fullFilter(e));
+  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-')&&fullFilter(e));
 
   const maxBuy=Math.max(...data.map(d=>d.buy),1);
 
@@ -1347,7 +1426,6 @@ function renderMonthModal(){
   const labels=MONTHS;
   const buyVals=data.map(d=>Math.round(d.buy));
   const sellVals=data.map(d=>Math.round(d.sell));
-  // buyColor hex to rgba
   const buyRgba=asset==='Stock'?'rgba(0,122,255,.7)':asset==='ETF'?'rgba(48,176,199,.7)':asset==='Crypto'?'rgba(175,82,222,.7)':'rgba(52,199,89,.7)';
   monthChart=new Chart(document.getElementById('c-month'),{
     type:'bar',
@@ -1365,10 +1443,23 @@ function renderMonthModal(){
   const totalBuy=data.reduce((a,d)=>a+d.buy,0);
   const totalSell=data.reduce((a,d)=>a+d.sell,0);
 
-  // 모달 타이틀에 자산 표시
-  document.getElementById('month-modal-title').textContent=`${y} · ${asset}`;
+  // 모달 타이틀에 자산 + 어카운트 + 티커 표시
+  const assetLabel=asset==='Stock'?'Indiv.':asset;
+  const filterParts=[assetLabel];
+  if(flowAccount!=='All')filterParts.push(flowAccount);
+  if(flowTicker!=='All')filterParts.push(flowTicker);
+  document.getElementById('month-modal-title').textContent=`${y} · ${filterParts.join(' · ')}`;
 
-  let html=`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
+  // 필터 상태 배지 표시
+  const filterBadgeHtml=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+    <span style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--text3);margin-right:2px;">보기:</span>
+    <span style="font-family:var(--mono);font-size:9px;background:${buyColor};color:#fff;padding:2px 8px;border-radius:20px;">${assetLabel}</span>
+    ${flowAccount!=='All'?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${flowAccount}</span>`:''}
+    ${flowTicker!=='All'?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${flowTicker}</span>`:''}
+    <span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text3);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${isKRW?'₩ KRW':'$ USD'}</span>
+  </div>`;
+
+  let html=filterBadgeHtml+`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
     <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${buyColor};">${fmt(totalBuy)}</div></div>
     <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL SELL</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--sell);">${fmt(totalSell)}</div></div>
     <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?buyColor:'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
