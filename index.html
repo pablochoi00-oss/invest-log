@@ -237,6 +237,22 @@ select option{background:var(--bg2);color:var(--text);}
 .cur-tab{padding:6px 16px;font-size:12px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);transition:all .2s;}
 .cur-tab.on{background:var(--buy);border-color:var(--buy);color:#fff;}
 
+/* DATE RANGE PICKER */
+.dr-wrap{margin-bottom:10px;}
+.dr-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:6px;}
+.dr-presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;}
+.dr-preset{flex-shrink:0;padding:4px 11px;font-size:10px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);font-family:var(--mono);white-space:nowrap;transition:all .2s;}
+.dr-preset.on{background:var(--text);border-color:var(--text);color:var(--bg);}
+.dr-custom{display:flex;gap:6px;align-items:center;overflow:hidden;max-height:0;opacity:0;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .25s ease,margin .25s;}
+.dr-custom.open{max-height:60px;opacity:1;margin-top:2px;}
+.dr-date{flex:1;font-size:11px;padding:7px 9px;border:1px solid var(--border2);border-radius:10px;background:var(--bg3);color:var(--text);font-family:var(--mono);outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.dr-date:focus{border-color:var(--buy);}
+.dr-sep{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;}
+.dr-apply{flex-shrink:0;padding:7px 12px;font-size:10px;font-weight:600;border:none;border-radius:10px;background:var(--buy);color:#fff;cursor:pointer;font-family:var(--mono);}
+.dr-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 10px;background:rgba(52,199,89,.13);border:1px solid rgba(52,199,89,.3);border-radius:20px;font-family:var(--mono);font-size:9px;color:var(--buy);margin-top:5px;}
+.dr-badge button{background:none;border:none;color:var(--buy);cursor:pointer;font-size:12px;line-height:1;padding:0;opacity:.7;}
+.dr-badge button:hover{opacity:1;}
+
 /* ASSET SUB-TAB */
 .asset-tabs{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
 .asset-tabs::-webkit-scrollbar{display:none;}
@@ -288,6 +304,25 @@ select option{background:var(--bg2);color:var(--text);}
 .yr-card{cursor:pointer;transition:transform .12s,box-shadow .12s;}
 .yr-card:active{transform:scale(.98);}
 .yr-card-tap{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;text-align:right;letter-spacing:.08em;}
+
+/* MONTH DETAIL DRAWER */
+.mo-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--border);cursor:pointer;transition:background .12s;border-radius:6px;margin:0 -4px;padding-left:4px;padding-right:4px;}
+.mo-row:last-child{border-bottom:none;}
+.mo-row:active{background:var(--bg3);}
+.mo-row-tap{font-family:var(--mono);font-size:8px;color:var(--text3);opacity:.6;}
+.mo-detail{overflow:hidden;max-height:0;transition:max-height .32s cubic-bezier(.4,0,.2,1);background:var(--bg3);border-radius:10px;margin-bottom:2px;}
+.mo-detail.open{max-height:9999px;}
+.mo-detail-inner{padding:10px 10px 8px;}
+.mo-detail-hd{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.mo-entry{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:.5px solid var(--border);}
+.mo-entry:last-child{border-bottom:none;}
+.mo-entry-left{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.mo-entry-ticker{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mo-entry-meta{font-family:var(--mono);font-size:9px;color:var(--text3);display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.mo-entry-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:10px;}
+.mo-entry-amt{font-family:var(--mono);font-size:13px;font-weight:500;}
+.mo-entry-dk{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.mo-empty{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;padding:12px 0;}
 </style>
 </head>
 <body>
@@ -549,29 +584,56 @@ select option{background:var(--bg2);color:var(--text);}
         <div class="sec-hd" style="margin-bottom:0;">Asset Flow</div>
         <button class="expand-btn" onclick="openModal('flow')">⤢ Expand</button>
       </div>
-      <!-- Currency switcher (1차) - 작게 -->
-      <div style="display:flex;gap:5px;margin-top:10px;margin-bottom:8px;" id="flow-cur-tabs">
+      <!-- 1. Currency switcher - 작게 -->
+      <div style="display:flex;gap:5px;margin-top:10px;margin-bottom:10px;align-items:center;" id="flow-cur-tabs">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;margin-right:2px;">통화</span>
         <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--buy);border-color:var(--buy);color:#fff;" class="cur-tab on" onclick="setCur('KRW',this)">₩ KRW</button>
         <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);" class="cur-tab" onclick="setCur('USD',this)">$ USD</button>
       </div>
-      <!-- Asset sub-tabs (2차) - 크게 · 복수선택 -->
-      <div class="asset-tabs" style="margin-bottom:8px;" id="flow-asset-tabs">
-        <button class="asset-tab on" data-asset="Total" onclick="toggleAssetTab('Total',this)">Total</button>
-        <button class="asset-tab" data-asset="Stock" onclick="toggleAssetTab('Stock',this)">Indiv.</button>
-        <button class="asset-tab" data-asset="ETF" onclick="toggleAssetTab('ETF',this)">ETF</button>
-        <button class="asset-tab" data-asset="Crypto" onclick="toggleAssetTab('Crypto',this)">Crypto</button>
+      <!-- 1.5 기간 선택 -->
+      <div class="dr-wrap">
+        <div class="dr-label">기간</div>
+        <div class="dr-presets" id="dr-presets">
+          <button class="dr-preset on" data-range="all"  onclick="setDateRange('all',this)">전체</button>
+          <button class="dr-preset"    data-range="ytd"  onclick="setDateRange('ytd',this)">YTD</button>
+          <button class="dr-preset"    data-range="1y"   onclick="setDateRange('1y',this)">1Y</button>
+          <button class="dr-preset"    data-range="3y"   onclick="setDateRange('3y',this)">3Y</button>
+          <button class="dr-preset"    data-range="5y"   onclick="setDateRange('5y',this)">5Y</button>
+          <button class="dr-preset"    data-range="custom" onclick="setDateRange('custom',this)">직접입력 ✦</button>
+        </div>
+        <div class="dr-custom" id="dr-custom">
+          <input type="date" id="dr-from" class="dr-date" placeholder="시작일">
+          <span class="dr-sep">→</span>
+          <input type="date" id="dr-to" class="dr-date" placeholder="종료일">
+          <button class="dr-apply" onclick="applyCustomRange()">적용</button>
+        </div>
+        <div id="dr-badge-wrap"></div>
       </div>
-      <!-- Account type filter · 복수선택 -->
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;" id="flow-account-tabs">
-        <button class="fbtn on" data-acct="All" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('All',this)">All Acct</button>
-        <button class="fbtn" data-acct="General" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('General',this)">General</button>
-        <button class="fbtn" data-acct="ISA" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('ISA',this)">ISA</button>
-        <button class="fbtn" data-acct="IRP" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('IRP',this)">IRP</button>
-        <button class="fbtn" data-acct="연금저축" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('연금저축',this)">연금저축</button>
-        <button class="fbtn" data-acct="기타" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('기타',this)">기타</button>
+      <!-- 2. Account type filter · 복수선택 -->
+      <div style="margin-bottom:10px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:5px;">계좌</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;" id="flow-account-tabs">
+          <button class="fbtn on" data-acct="All" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('All',this)">All</button>
+          <button class="fbtn" data-acct="General" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('General',this)">General</button>
+          <button class="fbtn" data-acct="ISA" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('ISA',this)">ISA</button>
+          <button class="fbtn" data-acct="IRP" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('IRP',this)">IRP</button>
+          <button class="fbtn" data-acct="연금저축" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('연금저축',this)">연금저축</button>
+          <button class="fbtn" data-acct="기타" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('기타',this)">기타</button>
+        </div>
       </div>
-      <!-- Ticker filter · 복수선택 chip 방식 -->
-      <div style="margin-bottom:12px;">
+      <!-- 3. Asset class · 복수선택 -->
+      <div style="margin-bottom:10px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:5px;">자산구분</div>
+        <div class="asset-tabs" style="margin-bottom:0;" id="flow-asset-tabs">
+          <button class="asset-tab on" data-asset="Total" onclick="toggleAssetTab('Total',this)">Total</button>
+          <button class="asset-tab" data-asset="Stock" onclick="toggleAssetTab('Stock',this)">Indiv.</button>
+          <button class="asset-tab" data-asset="ETF" onclick="toggleAssetTab('ETF',this)">ETF</button>
+          <button class="asset-tab" data-asset="Crypto" onclick="toggleAssetTab('Crypto',this)">Crypto</button>
+        </div>
+      </div>
+      <!-- 4. Ticker filter · 복수선택 chip 방식 -->
+      <div id="flow-ticker-wrap" style="margin-bottom:12px;display:none;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:5px;">종목</div>
         <div id="flow-ticker-chips" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
       </div>
       <div id="flow-metrics"></div>
@@ -828,6 +890,80 @@ function setChip(type,val,el){
   if(type==='region')refreshTickerDD();
 }
 
+/* ── DATE RANGE ── */
+let flowDateRange='all';   // 'all'|'ytd'|'1y'|'3y'|'5y'|'custom'
+let flowDateFrom=null;     // 'YYYY-MM-DD' or null
+let flowDateTo=null;
+
+function _rangeLabel(){
+  if(flowDateRange==='all') return null;
+  if(flowDateRange==='ytd') return `${new Date().getFullYear()}년`;
+  if(flowDateRange==='1y')  return '최근 1년';
+  if(flowDateRange==='3y')  return '최근 3년';
+  if(flowDateRange==='5y')  return '최근 5년';
+  if(flowDateRange==='custom'&&flowDateFrom&&flowDateTo)
+    return `${flowDateFrom} ~ ${flowDateTo}`;
+  return null;
+}
+function _computeFrom(){
+  const now=new Date();
+  const iso=d=>d.toISOString().slice(0,10);
+  if(flowDateRange==='all')  return null;
+  if(flowDateRange==='ytd')  return `${now.getFullYear()}-01-01`;
+  if(flowDateRange==='1y')   return iso(new Date(now.setFullYear(now.getFullYear()-1)));
+  if(flowDateRange==='3y')   return iso(new Date(now.setFullYear(now.getFullYear()-3)));
+  if(flowDateRange==='5y')   return iso(new Date(now.setFullYear(now.getFullYear()-5)));
+  if(flowDateRange==='custom') return flowDateFrom;
+  return null;
+}
+function _computeTo(){
+  if(flowDateRange==='custom') return flowDateTo;
+  return null; // null = no upper bound
+}
+function dateFilter(e){
+  const from=_computeFrom();
+  const to=_computeTo();
+  const dk=e.dk; // 'YYYY-MM-DD' or 'YYYY'
+  if(from&&dk<from.slice(0,dk.length)) return false;
+  if(to  &&dk>to.slice(0,dk.length))   return false;
+  return true;
+}
+function setDateRange(r,el){
+  flowDateRange=r;
+  document.querySelectorAll('#dr-presets .dr-preset').forEach(b=>b.classList.toggle('on',b===el));
+  const customBox=document.getElementById('dr-custom');
+  if(r==='custom'){
+    customBox.classList.add('open');
+  } else {
+    customBox.classList.remove('open');
+    _renderBadge();
+    renderFlow();
+  }
+}
+function applyCustomRange(){
+  const f=document.getElementById('dr-from').value;
+  const t=document.getElementById('dr-to').value;
+  if(!f||!t){return;}
+  flowDateFrom=f; flowDateTo=t;
+  document.getElementById('dr-custom').classList.remove('open');
+  _renderBadge();
+  renderFlow();
+}
+function clearDateRange(){
+  flowDateRange='all';
+  flowDateFrom=null; flowDateTo=null;
+  document.querySelectorAll('#dr-presets .dr-preset').forEach(b=>b.classList.toggle('on',b.getAttribute('data-range')==='all'));
+  document.getElementById('dr-custom').classList.remove('open');
+  _renderBadge();
+  renderFlow();
+}
+function _renderBadge(){
+  const wrap=document.getElementById('dr-badge-wrap');
+  if(!wrap)return;
+  const lbl=_rangeLabel();
+  wrap.innerHTML=lbl?`<div class="dr-badge"><span>${lbl}</span><button onclick="clearDateRange()">×</button></div>`:'';
+}
+
 /* ── CURRENCY TAB ── */
 let flowAsset='Total';          // 단일값 유지 (하위 호환용 - 내부에서 flowAssets Set 사용)
 let flowAssets=new Set(['Total']); // 복수 선택
@@ -915,22 +1051,24 @@ function setFlowAccount(a,el){ toggleFlowAccount(a,el); }
 function setFlowTicker(val){ toggleFlowTicker(val); }
 
 function updateFlowTickerChips(){
-  const wrap=document.getElementById('flow-ticker-chips');
-  if(!wrap)return;
-  // 현재 asset 선택 기준으로 티커 목록 구성
+  const wrap=document.getElementById('flow-ticker-wrap');
+  const chipDiv=document.getElementById('flow-ticker-chips');
+  if(!wrap||!chipDiv)return;
   const assetSet=flowAssets;
   const tickers=[...new Set(entries.filter(e=>
     assetSet.has('Total')||assetSet.has(e.asset)
   ).map(e=>e.ticker).filter(Boolean))].sort();
 
-  if(!tickers.length){wrap.innerHTML='';return;}
+  if(!tickers.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
 
-  const allBtn=`<button onclick="toggleFlowTicker('All')" style="flex-shrink:0;padding:4px 11px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:${flowTickers.has('All')?'var(--buy)':'var(--bg3)'};border-color:${flowTickers.has('All')?'var(--buy)':'var(--border2)'};color:${flowTickers.has('All')?'#fff':'var(--text3)'};">All</button>`;
-  const chips=tickers.map(t=>{
-    const on=flowTickers.has(t);
-    return`<button onclick="toggleFlowTicker('${t.replace(/'/g,"\\'")}') " style="flex-shrink:0;padding:4px 11px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:${on?'var(--text)':'var(--bg3)'};border-color:${on?'var(--text)':'var(--border2)'};color:${on?'var(--bg)':'var(--text3)'};">${t}</button>`;
-  }).join('');
-  wrap.innerHTML=allBtn+chips;
+  const btn=(label,val,on)=>{
+    const bg=on?'var(--text)':'var(--bg3)';
+    const bc=on?'var(--text)':'var(--border2)';
+    const col=on?'var(--bg)':'var(--text3)';
+    return`<button onclick="toggleFlowTicker('${val.replace(/'/g,"\\'")}')" style="flex-shrink:0;padding:4px 11px;font-size:10px;font-family:var(--mono);border:1px solid ${bc};border-radius:20px;cursor:pointer;background:${bg};color:${col};">${label}</button>`;
+  };
+  chipDiv.innerHTML=btn('All','All',flowTickers.has('All'))+tickers.map(t=>btn(t,t,flowTickers.has(t))).join('');
 }
 
 /* ── MODAL / FULLSCREEN CHARTS ── */
@@ -1267,7 +1405,7 @@ function renderFlow(){
   const assetFilter=e=>flowAssets.has('Total')||flowAssets.has(e.asset);
   const accountFilter=e=>flowAccounts.has('All')||flowAccounts.has(e.account);
   const tickerFilter=e=>flowTickers.has('All')||flowTickers.has(e.ticker);
-  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
+  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e)&&dateFilter(e);
 
   // 티커 chip UI 최신화
   updateFlowTickerChips();
@@ -1287,7 +1425,17 @@ function renderFlow(){
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
 
-  // 현재 필터 배지 텍스트
+  // qty 합계 (BUY qty - SELL qty)
+  const totalQtyBuy=filtered.filter(e=>e.type==='BUY').reduce((a,e)=>a+(e.qty||0),0);
+  const totalQtySell=filtered.filter(e=>e.type==='SELL').reduce((a,e)=>a+(e.qty||0),0);
+  const netQty=totalQtyBuy-totalQtySell;
+  const isCrypto=!flowAssets.has('Total')&&flowAssets.size===1&&flowAssets.has('Crypto');
+  const qtyUnit=isCrypto?'coins':'shares';
+  const fmtQty=v=>{
+    if(v===0)return'—';
+    const abs=Math.abs(v);
+    return(v<0?'-':'')+abs.toLocaleString(undefined,{maximumFractionDigits:abs>=1?4:8});
+  };
   const assetLabel=flowAssets.has('Total')?'Total':[...flowAssets].map(a=>a==='Stock'?'Indiv.':a).join('+');
   const acctLabel=flowAccounts.has('All')?'':[...flowAccounts].join('+');
   const tickerLabel=flowTickers.has('All')?'':[...flowTickers].join('+');
@@ -1309,8 +1457,8 @@ function renderFlow(){
           <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--sell);">${fmt(tS)}</div>
         </div>
         <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:9px 10px;">
-          <div class="ml" style="margin-bottom:3px;">${entries_label}</div>
-          <div style="font-family:var(--mono);font-size:12px;font-weight:500;">${entries_count}</div>
+          <div class="ml" style="margin-bottom:3px;">${qtyUnit}</div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:${netQty>0?'var(--buy)':netQty<0?'var(--sell)':'var(--text2)'};">${fmtQty(netQty)}</div>
         </div>
       </div>
     </div>`;
@@ -1458,43 +1606,46 @@ function setMonthCur(c,el){
 function renderMonthModal(){
   const y=monthYear;if(!y)return;
   const isKRW=monthCur==='KRW';
-  const asset=flowAsset; // 상단 2차 탭 상태 그대로 반영
+  const asset=flowAsset;
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS_KO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   const getVal=e=>isKRW?((!e.isUSD)?e.amt:0):(e.isUSD&&e.rate?e.amt/e.rate:0);
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
   const assetFilter=e=>flowAssets.has('Total')||flowAssets.has(e.asset);
   const accountFilter=e=>flowAccounts.has('All')||flowAccounts.has(e.account);
   const tickerFilter=e=>flowTickers.has('All')||flowTickers.has(e.ticker);
-  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
+  const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e)&&dateFilter(e);
   const assetColorMap={Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
   const buyColor=(!flowAssets.has('Total')&&flowAssets.size===1)?assetColorMap[[...flowAssets][0]]||'var(--buy)':'var(--buy)';
+  const assetPillClass=e=>e.asset==='Stock'?'p-stock':e.asset==='Crypto'?'p-coin':'p-etf';
+  const assetLabel2=flowAssets.has('Total')?'Total':[...flowAssets].map(a=>a==='Stock'?'Indiv.':a).join('+');
+  const acctLabel2=flowAccounts.has('All')?'':[...flowAccounts].join('+');
+  const tickerLabel2=flowTickers.has('All')?'':[...flowTickers].join('+');
+  const filterParts=[assetLabel2,acctLabel2,tickerLabel2].filter(Boolean);
+  document.getElementById('month-modal-title').textContent=`${y} · ${filterParts.join(' · ')}`;
 
-  // Build month data (자산 + 어카운트 + 티커 필터 적용)
-  const data=MONTHS.map((_,mi)=>{
+  // month data
+  const monthData=MONTHS.map((_,mi)=>{
     const mo=String(mi+1).padStart(2,'0');
     const mEntries=entries.filter(e=>e.dk.startsWith(y+'-'+mo)&&fullFilter(e));
     const buy=mEntries.filter(e=>e.type==='BUY').reduce((a,e)=>a+getVal(e),0);
     const sell=mEntries.filter(e=>e.type==='SELL').reduce((a,e)=>a+getVal(e),0);
-    return{buy,sell,net:buy-sell,count:mEntries.length};
+    return{buy,sell,net:buy-sell,entries:mEntries,mo};
   });
+  const hasMonthly=monthData.some(d=>d.entries.length>0);
+  const totalBuy=monthData.reduce((a,d)=>a+d.buy,0);
+  const totalSell=monthData.reduce((a,d)=>a+d.sell,0);
+  const maxBuy=Math.max(...monthData.map(d=>d.buy),1);
 
-  const annEntries=entries.filter(e=>e.dk===y&&fullFilter(e));
-  const hasMonthly=entries.some(e=>e.dk.startsWith(y+'-')&&fullFilter(e));
-
-  const maxBuy=Math.max(...data.map(d=>d.buy),1);
-
-  // Chart
+  // chart
   if(monthChart){monthChart.destroy();monthChart=null;}
-  const labels=MONTHS;
-  const buyVals=data.map(d=>Math.round(d.buy));
-  const sellVals=data.map(d=>Math.round(d.sell));
   const buyRgba=asset==='Stock'?'rgba(0,122,255,.7)':asset==='ETF'?'rgba(48,176,199,.7)':asset==='Crypto'?'rgba(175,82,222,.7)':'rgba(52,199,89,.7)';
   monthChart=new Chart(document.getElementById('c-month'),{
     type:'bar',
-    data:{labels,datasets:[
-      {label:'Buy',data:buyVals,backgroundColor:buyRgba,borderRadius:3,stack:'a'},
-      {label:'Sell',data:sellVals,backgroundColor:'rgba(255,59,48,.55)',borderRadius:3,stack:'b'}
+    data:{labels:MONTHS,datasets:[
+      {label:'Buy', data:monthData.map(d=>Math.round(d.buy)), backgroundColor:buyRgba,borderRadius:3,stack:'a'},
+      {label:'Sell',data:monthData.map(d=>Math.round(d.sell)),backgroundColor:'rgba(255,59,48,.55)',borderRadius:3,stack:'b'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},
@@ -1502,18 +1653,7 @@ function renderMonthModal(){
               y:{stacked:false,ticks:{...TK(),callback:fmtAx},grid:GR(),border:{display:false}}}}
   });
 
-  // List
-  const totalBuy=data.reduce((a,d)=>a+d.buy,0);
-  const totalSell=data.reduce((a,d)=>a+d.sell,0);
-
-  // 모달 타이틀에 자산 + 어카운트 + 티커 표시
-  const assetLabel2=flowAssets.has('Total')?'Total':[...flowAssets].map(a=>a==='Stock'?'Indiv.':a).join('+');
-  const acctLabel2=flowAccounts.has('All')?'':[...flowAccounts].join('+');
-  const tickerLabel2=flowTickers.has('All')?'':[...flowTickers].join('+');
-  const filterParts=[assetLabel2,acctLabel2,tickerLabel2].filter(Boolean);
-  document.getElementById('month-modal-title').textContent=`${y} · ${filterParts.join(' · ')}`;
-
-  // 필터 상태 배지 표시
+  // header badges
   const filterBadgeHtml=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
     <span style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--text3);margin-right:2px;">보기:</span>
     <span style="font-family:var(--mono);font-size:9px;background:${buyColor};color:#fff;padding:2px 8px;border-radius:20px;">${assetLabel2}</span>
@@ -1522,30 +1662,91 @@ function renderMonthModal(){
     <span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text3);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${isKRW?'₩ KRW':'$ USD'}</span>
   </div>`;
 
-  let html=filterBadgeHtml+`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
-    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${buyColor};">${fmt(totalBuy)}</div></div>
-    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL SELL</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--sell);">${fmt(totalSell)}</div></div>
-    <div><div class="ml" style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?buyColor:'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
+  // summary bar
+  const summaryHtml=`<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;">
+    <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL BUY</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${buyColor};">${fmt(totalBuy)}</div></div>
+    <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);">TOTAL SELL</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--sell);">${fmt(totalSell)}</div></div>
+    <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);">NET</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:${totalBuy-totalSell>=0?buyColor:'var(--sell)'};">${fmt(totalBuy-totalSell)}</div></div>
   </div>`;
 
-  if(!hasMonthly&&annEntries.length>0){
-    html+=`<div class="empty" style="padding:16px 0;font-size:11px;">이 연도는 연간 데이터로 기록되어 월별 분류가 없습니다.</div>`;
-  } else {
-    html+=data.map((d,mi)=>{
-      if(d.buy===0&&d.sell===0)return'';
-      const pct=Math.round(d.buy/maxBuy*100);
-      return`<div class="mo-row">
-        <div class="mo-name">${MONTHS[mi]}</div>
-        <div class="mo-bar-wrap"><div class="mo-bar-fill" style="width:${pct}%;background:${buyColor};"></div></div>
-        <div class="mo-vals">
-          <div style="color:${buyColor};">${fmt(d.buy)}</div>
-          ${d.sell>0?`<div class="mo-sell">−${fmt(d.sell)}</div>`:''}
+  // month rows + detail
+  const makeEntryRow=(e)=>{
+    const amt=fmt(getVal(e));
+    const amtColor=e.type==='BUY'?buyColor:'var(--sell)';
+    const ticker=e.ticker||'—';
+    const qty=e.qty?` × ${e.qty.toLocaleString(undefined,{maximumFractionDigits:6})}`:'' ;
+    const meta=[e.account,e.platform,e.mode].filter(Boolean).join(' · ');
+    const memo=e.memo?`<span style="color:var(--text3);">"${e.memo}"</span>`:'';
+    return`<div class="mo-entry">
+      <div class="mo-entry-left">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span class="pill ${e.type==='BUY'?'p-buy':'p-sell'}">${e.type}</span>
+          <span class="pill ${assetPillClass(e)}">${e.asset==='Stock'?'Indiv.':e.asset}</span>
+          <span class="mo-entry-ticker">${ticker}${qty}</span>
         </div>
-      </div>`;
-    }).join('');
-  }
+        <div class="mo-entry-meta">${meta?`<span>${meta}</span>`:''}${memo}</div>
+      </div>
+      <div class="mo-entry-right">
+        <div class="mo-entry-amt" style="color:${amtColor};">${e.type==='SELL'?'−':''}${amt}</div>
+        <div class="mo-entry-dk">${e.dk}</div>
+      </div>
+    </div>`;
+  };
 
-  document.getElementById('month-list').innerHTML=html;
+  const monthRowsHtml=monthData.map((d,mi)=>{
+    if(d.buy===0&&d.sell===0&&d.entries.length===0) return'';
+    const pct=Math.round(d.buy/maxBuy*100);
+    const id=`mo-detail-${y}-${d.mo}`;
+    // 내역 rows (날짜순)
+    const sorted=[...d.entries].sort((a,b)=>a.dk.localeCompare(b.dk));
+    const entryCount=sorted.length;
+    const detailRows=entryCount>0
+      ? sorted.map(makeEntryRow).join('')
+      : `<div class="mo-empty">거래 내역 없음</div>`;
+
+    return`
+    <div class="mo-row" onclick="toggleMoDetail('${id}',this)">
+      <div class="mo-name">${MONTHS[mi]}<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:1px;">${entryCount}건</div></div>
+      <div class="mo-bar-wrap"><div class="mo-bar-fill" style="width:${pct}%;background:${buyColor};"></div></div>
+      <div class="mo-vals">
+        <div style="color:${buyColor};">${fmt(d.buy)}</div>
+        ${d.sell>0?`<div class="mo-sell">−${fmt(d.sell)}</div>`:''}
+      </div>
+      <div class="mo-row-tap" style="margin-left:8px;">›</div>
+    </div>
+    <div class="mo-detail" id="${id}">
+      <div class="mo-detail-inner">
+        <div class="mo-detail-hd">
+          <span>${MONTHS_KO[mi]} 매매내역</span>
+          <span style="color:${buyColor};">NET ${fmt(d.net)}</span>
+        </div>
+        ${detailRows}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('month-list').innerHTML=
+    filterBadgeHtml+summaryHtml+
+    (!hasMonthly
+      ? `<div class="empty" style="padding:16px 0;font-size:11px;">이 연도는 월별 분류가 없습니다.</div>`
+      : monthRowsHtml);
+}
+
+function toggleMoDetail(id,row){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const isOpen=el.classList.contains('open');
+  // 다른 열린 것 닫기
+  document.querySelectorAll('.mo-detail.open').forEach(d=>{
+    if(d.id!==id){
+      d.classList.remove('open');
+      const prevRow=d.previousElementSibling;
+      if(prevRow) prevRow.querySelector('.mo-row-tap').textContent='›';
+    }
+  });
+  el.classList.toggle('open',!isOpen);
+  row.querySelector('.mo-row-tap').textContent=isOpen?'›':'↓';
+  if(!isOpen) setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
 }
 
 /* ── INIT ── */
