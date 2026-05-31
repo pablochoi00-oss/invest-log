@@ -554,27 +554,25 @@ select option{background:var(--bg2);color:var(--text);}
         <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--buy);border-color:var(--buy);color:#fff;" class="cur-tab on" onclick="setCur('KRW',this)">₩ KRW</button>
         <button style="padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text3);" class="cur-tab" onclick="setCur('USD',this)">$ USD</button>
       </div>
-      <!-- Asset sub-tabs (2차) - 크게 -->
+      <!-- Asset sub-tabs (2차) - 크게 · 복수선택 -->
       <div class="asset-tabs" style="margin-bottom:8px;" id="flow-asset-tabs">
-        <button class="asset-tab on" data-asset="Total" onclick="setAssetTab('Total',this)">Total</button>
-        <button class="asset-tab" data-asset="Stock" onclick="setAssetTab('Stock',this)">Indiv.</button>
-        <button class="asset-tab" data-asset="ETF" onclick="setAssetTab('ETF',this)">ETF</button>
-        <button class="asset-tab" data-asset="Crypto" onclick="setAssetTab('Crypto',this)">Crypto</button>
+        <button class="asset-tab on" data-asset="Total" onclick="toggleAssetTab('Total',this)">Total</button>
+        <button class="asset-tab" data-asset="Stock" onclick="toggleAssetTab('Stock',this)">Indiv.</button>
+        <button class="asset-tab" data-asset="ETF" onclick="toggleAssetTab('ETF',this)">ETF</button>
+        <button class="asset-tab" data-asset="Crypto" onclick="toggleAssetTab('Crypto',this)">Crypto</button>
       </div>
-      <!-- Account type filter -->
+      <!-- Account type filter · 복수선택 -->
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;" id="flow-account-tabs">
-        <button class="fbtn on" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('All',this)">All Acct</button>
-        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('General',this)">General</button>
-        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('ISA',this)">ISA</button>
-        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('IRP',this)">IRP</button>
-        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('연금저축',this)">연금저축</button>
-        <button class="fbtn" style="font-size:10px;padding:4px 11px;" onclick="setFlowAccount('기타',this)">기타</button>
+        <button class="fbtn on" data-acct="All" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('All',this)">All Acct</button>
+        <button class="fbtn" data-acct="General" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('General',this)">General</button>
+        <button class="fbtn" data-acct="ISA" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('ISA',this)">ISA</button>
+        <button class="fbtn" data-acct="IRP" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('IRP',this)">IRP</button>
+        <button class="fbtn" data-acct="연금저축" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('연금저축',this)">연금저축</button>
+        <button class="fbtn" data-acct="기타" style="font-size:10px;padding:4px 11px;" onclick="toggleFlowAccount('기타',this)">기타</button>
       </div>
-      <!-- Ticker filter -->
+      <!-- Ticker filter · 복수선택 chip 방식 -->
       <div style="margin-bottom:12px;">
-        <select id="flow-ticker-select" onchange="setFlowTicker(this.value)" style="font-size:12px;padding:6px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:var(--mono);width:100%;outline:none;">
-          <option value="All">All Tickers</option>
-        </select>
+        <div id="flow-ticker-chips" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
       </div>
       <div id="flow-metrics"></div>
       <div class="clabel" style="margin-bottom:10px;">Yearly Summary</div>
@@ -831,9 +829,12 @@ function setChip(type,val,el){
 }
 
 /* ── CURRENCY TAB ── */
-let flowAsset='Total';
-let flowAccount='All';
-let flowTicker='All';
+let flowAsset='Total';          // 단일값 유지 (하위 호환용 - 내부에서 flowAssets Set 사용)
+let flowAssets=new Set(['Total']); // 복수 선택
+let flowAccounts=new Set(['All']); // 복수 선택
+let flowTickers=new Set(['All']); // 복수 선택
+let flowAccount='All'; // 하위 호환
+let flowTicker='All';  // 하위 호환
 
 function setCur(c,el){
   flowCurrency=c;
@@ -845,29 +846,91 @@ function setCur(c,el){
   });
   renderFlow();
 }
-function setAssetTab(a,el){
-  flowAsset=a;
-  document.querySelectorAll('#flow-asset-tabs .asset-tab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  updateFlowTickerOptions();
+
+function toggleAssetTab(a,el){
+  if(a==='Total'){
+    // Total 누르면 전체 선택 초기화
+    flowAssets=new Set(['Total']);
+  } else {
+    flowAssets.delete('Total');
+    if(flowAssets.has(a)){
+      flowAssets.delete(a);
+      if(flowAssets.size===0) flowAssets=new Set(['Total']); // 하나도 없으면 Total로
+    } else {
+      flowAssets.add(a);
+    }
+  }
+  // 탭 UI 업데이트
+  document.querySelectorAll('#flow-asset-tabs .asset-tab').forEach(b=>{
+    const v=b.getAttribute('data-asset');
+    b.classList.toggle('on', flowAssets.has(v));
+  });
+  // 하위 호환 단일값
+  flowAsset=flowAssets.size===1?[...flowAssets][0]:'Total';
+  updateFlowTickerChips();
   renderFlow();
 }
-function setFlowAccount(a,el){
-  flowAccount=a;
-  document.querySelectorAll('#flow-account-tabs .fbtn').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
+
+function toggleFlowAccount(a,el){
+  if(a==='All'){
+    flowAccounts=new Set(['All']);
+  } else {
+    flowAccounts.delete('All');
+    if(flowAccounts.has(a)){
+      flowAccounts.delete(a);
+      if(flowAccounts.size===0) flowAccounts=new Set(['All']);
+    } else {
+      flowAccounts.add(a);
+    }
+  }
+  flowAccount=[...flowAccounts][0]||'All'; // 하위 호환
+  // UI 업데이트
+  document.querySelectorAll('#flow-account-tabs .fbtn').forEach(b=>{
+    const v=b.getAttribute('data-acct');
+    b.classList.toggle('on', flowAccounts.has(v));
+  });
   renderFlow();
 }
-function setFlowTicker(val){
-  flowTicker=val;
+
+function toggleFlowTicker(t){
+  if(t==='All'){
+    flowTickers=new Set(['All']);
+  } else {
+    flowTickers.delete('All');
+    if(flowTickers.has(t)){
+      flowTickers.delete(t);
+      if(flowTickers.size===0) flowTickers=new Set(['All']);
+    } else {
+      flowTickers.add(t);
+    }
+  }
+  flowTicker=[...flowTickers][0]||'All'; // 하위 호환
+  updateFlowTickerChips();
   renderFlow();
 }
-function updateFlowTickerOptions(){
-  const sel=document.getElementById('flow-ticker-select');
-  if(!sel)return;
-  const asset=flowAsset;
-  const tickers=[...new Set(entries.filter(e=>asset==='Total'||e.asset===asset).map(e=>e.ticker).filter(Boolean))].sort();
-  sel.innerHTML='<option value="All">All Tickers</option>'+tickers.map(t=>`<option value="${t}"${flowTicker===t?' selected':''}>${t}</option>`).join('');
+
+// 구버전 호환 래퍼 (month modal 등에서 사용)
+function setAssetTab(a,el){ toggleAssetTab(a,el); }
+function setFlowAccount(a,el){ toggleFlowAccount(a,el); }
+function setFlowTicker(val){ toggleFlowTicker(val); }
+
+function updateFlowTickerChips(){
+  const wrap=document.getElementById('flow-ticker-chips');
+  if(!wrap)return;
+  // 현재 asset 선택 기준으로 티커 목록 구성
+  const assetSet=flowAssets;
+  const tickers=[...new Set(entries.filter(e=>
+    assetSet.has('Total')||assetSet.has(e.asset)
+  ).map(e=>e.ticker).filter(Boolean))].sort();
+
+  if(!tickers.length){wrap.innerHTML='';return;}
+
+  const allBtn=`<button onclick="toggleFlowTicker('All')" style="flex-shrink:0;padding:4px 11px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:${flowTickers.has('All')?'var(--buy)':'var(--bg3)'};border-color:${flowTickers.has('All')?'var(--buy)':'var(--border2)'};color:${flowTickers.has('All')?'#fff':'var(--text3)'};">All</button>`;
+  const chips=tickers.map(t=>{
+    const on=flowTickers.has(t);
+    return`<button onclick="toggleFlowTicker('${t.replace(/'/g,"\\'")}') " style="flex-shrink:0;padding:4px 11px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:${on?'var(--text)':'var(--bg3)'};border-color:${on?'var(--text)':'var(--border2)'};color:${on?'var(--bg)':'var(--text3)'};">${t}</button>`;
+  }).join('');
+  wrap.innerHTML=allBtn+chips;
 }
 
 /* ── MODAL / FULLSCREEN CHARTS ── */
@@ -1030,7 +1093,7 @@ function go(id){
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
   document.getElementById('pg-'+id).classList.add('active');
   document.querySelectorAll('.bn')[{rec:0,hist:1,flow:2,alloc:3,goal:4}[id]].classList.add('on');
-  if(id==='hist')renderHist();if(id==='flow'){updateFlowTickerOptions();renderFlow();}if(id==='alloc')renderAlloc();if(id==='goal')renderGoal();
+  if(id==='hist')renderHist();if(id==='flow'){updateFlowTickerChips();renderFlow();}if(id==='alloc')renderAlloc();if(id==='goal')renderGoal();
 }
 function renderCurrent(){go(document.querySelector('.page.active').id.replace('pg-',''));}
 function setT(t,el){tradeType=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
@@ -1195,25 +1258,25 @@ function renderFlow(){
   dC('flow');dC('net');
   const{years,r}=getYD();
   const isKRW=flowCurrency==='KRW';
-  const asset=flowAsset; // 'Total','Stock','ETF','Crypto'
 
   const getKRW=e=>(!e.isUSD)?e.amt:0;
   const getUSD=e=>e.isUSD&&e.rate?e.amt/e.rate:0;
   const getAmtByCur=e=>isKRW?getKRW(e):getUSD(e);
 
-  // 자산 필터 함수
-  const assetFilter=e=>asset==='Total'?true:e.asset===asset;
-  // 어카운트 필터
-  const accountFilter=e=>flowAccount==='All'?true:e.account===flowAccount;
-  // 티커 필터
-  const tickerFilter=e=>flowTicker==='All'?true:e.ticker===flowTicker;
-  // 통합 필터
+  // 복수 선택 필터
+  const assetFilter=e=>flowAssets.has('Total')||flowAssets.has(e.asset);
+  const accountFilter=e=>flowAccounts.has('All')||flowAccounts.has(e.account);
+  const tickerFilter=e=>flowTickers.has('All')||flowTickers.has(e.ticker);
   const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
 
-  // 티커 옵션 업데이트
-  updateFlowTickerOptions();
+  // 티커 chip UI 최신화
+  updateFlowTickerChips();
 
-  // 상단 통계: 통화 + 자산 + 어카운트 + 티커 탭 모두 적용
+  // 색상: 단일 선택일 때 해당 asset 색, 복수면 green
+  const assetColorMap={Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
+  const yrColor=(!flowAssets.has('Total')&&flowAssets.size===1)?assetColorMap[[...flowAssets][0]]||'var(--buy)':'var(--buy)';
+
+  // 상단 통계
   const filtered=entries.filter(fullFilter);
   const tB=filtered.filter(e=>e.type==='BUY').reduce((a,e)=>a+getAmtByCur(e),0);
   const tS=filtered.filter(e=>e.type==='SELL').reduce((a,e)=>a+getAmtByCur(e),0);
@@ -1223,6 +1286,11 @@ function renderFlow(){
 
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
+
+  // 현재 필터 배지 텍스트
+  const assetLabel=flowAssets.has('Total')?'Total':[...flowAssets].map(a=>a==='Stock'?'Indiv.':a).join('+');
+  const acctLabel=flowAccounts.has('All')?'':[...flowAccounts].join('+');
+  const tickerLabel=flowTickers.has('All')?'':[...flowTickers].join('+');
 
   // Net Invested 크게, Bought/Sold 작게
   document.getElementById('flow-metrics').innerHTML=`
@@ -1247,15 +1315,11 @@ function renderFlow(){
       </div>
     </div>`;
 
-  // asset 탭별 색상
-  const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
-  const yrColor=assetColor[asset]||'var(--buy)';
   const yrSellColor='var(--sell)';
 
   const yrEl=document.getElementById('yr-summary');
   if(!years.length){yrEl.innerHTML='<div class="empty">No data yet</div>';}
   else{
-    // yearly summary: 선택된 자산 + 선택된 통화 기준
     const maxB=Math.max(...years.map(y=>
       entries.filter(e=>e.type==='BUY'&&e.dk.slice(0,4)===y&&fullFilter(e)).reduce((a,e)=>a+getAmtByCur(e),0)
     ),1);
@@ -1265,8 +1329,7 @@ function renderFlow(){
       const netAmt=buyAmt-sellAmt;
       const pct=Math.round(buyAmt/maxB*100);
       const hasData=buyAmt>0||sellAmt>0;
-      // 현재 선택된 필터 표시
-      const filterBadge=`${asset==='Stock'?'Indiv.':asset}${flowAccount!=='All'?' · '+flowAccount:''}${flowTicker!=='All'?' · '+flowTicker:''}`;
+      const filterBadge=[assetLabel,acctLabel,tickerLabel].filter(Boolean).join(' · ');
       return`<div class="yr-card" onclick="openMonthModal('${y}')">
         <div class="yr-title">${y}</div>
         ${hasData?`
@@ -1400,12 +1463,12 @@ function renderMonthModal(){
   const getVal=e=>isKRW?((!e.isUSD)?e.amt:0):(e.isUSD&&e.rate?e.amt/e.rate:0);
   const fmt=isKRW?fmtWon:fmtUSD;
   const fmtAx=isKRW?fmtAxisKRW:fmtAxisUSD;
-  const assetFilter=e=>asset==='Total'?true:e.asset===asset;
-  const accountFilter=e=>flowAccount==='All'?true:e.account===flowAccount;
-  const tickerFilter=e=>flowTicker==='All'?true:e.ticker===flowTicker;
+  const assetFilter=e=>flowAssets.has('Total')||flowAssets.has(e.asset);
+  const accountFilter=e=>flowAccounts.has('All')||flowAccounts.has(e.account);
+  const tickerFilter=e=>flowTickers.has('All')||flowTickers.has(e.ticker);
   const fullFilter=e=>assetFilter(e)&&accountFilter(e)&&tickerFilter(e);
-  const assetColor={Total:'var(--buy)',Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
-  const buyColor=assetColor[asset]||'var(--buy)';
+  const assetColorMap={Stock:'#007AFF',ETF:'#30B0C7',Crypto:'#AF52DE'};
+  const buyColor=(!flowAssets.has('Total')&&flowAssets.size===1)?assetColorMap[[...flowAssets][0]]||'var(--buy)':'var(--buy)';
 
   // Build month data (자산 + 어카운트 + 티커 필터 적용)
   const data=MONTHS.map((_,mi)=>{
@@ -1444,18 +1507,18 @@ function renderMonthModal(){
   const totalSell=data.reduce((a,d)=>a+d.sell,0);
 
   // 모달 타이틀에 자산 + 어카운트 + 티커 표시
-  const assetLabel=asset==='Stock'?'Indiv.':asset;
-  const filterParts=[assetLabel];
-  if(flowAccount!=='All')filterParts.push(flowAccount);
-  if(flowTicker!=='All')filterParts.push(flowTicker);
+  const assetLabel2=flowAssets.has('Total')?'Total':[...flowAssets].map(a=>a==='Stock'?'Indiv.':a).join('+');
+  const acctLabel2=flowAccounts.has('All')?'':[...flowAccounts].join('+');
+  const tickerLabel2=flowTickers.has('All')?'':[...flowTickers].join('+');
+  const filterParts=[assetLabel2,acctLabel2,tickerLabel2].filter(Boolean);
   document.getElementById('month-modal-title').textContent=`${y} · ${filterParts.join(' · ')}`;
 
   // 필터 상태 배지 표시
   const filterBadgeHtml=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
     <span style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--text3);margin-right:2px;">보기:</span>
-    <span style="font-family:var(--mono);font-size:9px;background:${buyColor};color:#fff;padding:2px 8px;border-radius:20px;">${assetLabel}</span>
-    ${flowAccount!=='All'?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${flowAccount}</span>`:''}
-    ${flowTicker!=='All'?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${flowTicker}</span>`:''}
+    <span style="font-family:var(--mono);font-size:9px;background:${buyColor};color:#fff;padding:2px 8px;border-radius:20px;">${assetLabel2}</span>
+    ${acctLabel2?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${acctLabel2}</span>`:''}
+    ${tickerLabel2?`<span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${tickerLabel2}</span>`:''}
     <span style="font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text3);padding:2px 8px;border-radius:20px;border:1px solid var(--border2);">${isKRW?'₩ KRW':'$ USD'}</span>
   </div>`;
 
